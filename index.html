@@ -3,22 +3,35 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI 자막 번역기 (DeepXL)</title>
+    <title>AI 자막 번역기</title>
     <style>
         body { font-family: 'Malgun Gothic', sans-serif; background-color: #f3f0ff; margin: 0; padding: 40px; display: flex; justify-content: center; align-items: center; min-height: 90vh; }
         .container { background: white; padding: 40px; border-radius: 16px; box-shadow: 0 10px 25px rgba(107, 70, 193, 0.1); width: 100%; max-width: 500px; text-align: center; }
         
-        h1 { color: #6b46c1; margin-bottom: 10px; font-size: 28px; }
-        p { color: #718096; margin-bottom: 25px; font-size: 14px; }
-        input[type="text"] { display: none; }
+        h1 { color: #6b46c1; margin-bottom: 25px; font-size: 28px; }
+        input[type="file"] { display: none; }
         
         .config-box { background: #f7fafc; padding: 20px; border-radius: 8px; margin-bottom: 20px; text-align: left; border: 1px solid #e2e8f0; }
-        .config-box label { font-size: 13px; font-weight: bold; color: #4a5568; display: block; margin-bottom: 8px; }
-        .config-box input[type="text"] { width: 93%; padding: 8px; border: 1px solid #cbd5e0; border-radius: 4px; font-size: 13px; display: block; }
+        .lang-select-group { display: flex; gap: 15px; }
+        .lang-select-group div { flex: 1; }
+        .lang-select-group label { font-size: 13px; font-weight: bold; color: #4a5568; display: block; }
+        .lang-select-group select { width: 100%; padding: 8px; border: 1px solid #cbd5e0; border-radius: 4px; font-size: 13px; margin-top: 6px; cursor: pointer; }
 
-        .file-label { display: block; background: #f7fafc; border: 2px dashed #b794f4; padding: 40px 20px; border-radius: 12px; cursor: pointer; margin-bottom: 25px; color: #4a5568; font-weight: bold; transition: all 0.2s; }
+        .file-label { display: block; background: #f7fafc; border: 2px dashed #b794f4; padding: 40px 20px; border-radius: 12px; cursor: pointer; margin-bottom: 20px; color: #4a5568; font-weight: bold; transition: all 0.2s; font-size: 16px; }
         .file-label.dragover { background: #e8dff5; border-color: #6b46c1; transform: scale(1.02); }
         
+        /* [새로 추가] 파일 목록 영역 스타일 */
+        .file-list-container { text-align: left; background: #fafafa; border: 1px solid #e2e8f0; border-radius: 8px; padding: 15px; margin-bottom: 25px; max-height: 200px; overflow-y: auto; display: none; }
+        .file-item { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid #edf2f7; font-size: 13px; }
+        .file-item:last-child { border-bottom: none; }
+        .file-name { color: #4a5568; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 70%; }
+        .file-status { font-size: 12px; font-weight: bold; color: #a0aec0; }
+        .file-status.loading { color: #dd6b20; }
+        
+        /* 파일별 낱개 다운로드 버튼 */
+        .btn-mini-download { background: #3182ce; color: white; border: none; padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: bold; cursor: pointer; }
+        .btn-mini-download:hover { background: #2b6cb0; }
+
         .btn-group { display: flex; gap: 10px; margin-bottom: 15px; }
         button { color: white; border: none; padding: 15px 20px; border-radius: 8px; font-size: 15px; font-weight: bold; cursor: pointer; flex: 1; transition: background 0.2s; }
         
@@ -26,6 +39,10 @@
         .btn-pause { background: #dd6b20; display: none; } .btn-pause:hover { background: #c05621; }
         .btn-resume { background: #3182ce; display: none; } .btn-resume:hover { background: #2b6cb0; }
         .btn-stop { background: #e53e3e; display: none; } .btn-stop:hover { background: #9b2c2c; }
+        
+        /* 전체 파일 다운로드 대형 버튼 */
+        .btn-download-all { background: #2f855a; display: none; margin-top: 15px; width: 100%; }
+        .btn-download-all:hover { background: #22543d; }
         
         .progress-container { margin-top: 25px; display: none; text-align: left; }
         .progress-text { font-size: 14px; color: #4a5568; font-weight: bold; margin-bottom: 8px; display: flex; justify-content: space-between; }
@@ -45,19 +62,44 @@
 
 <div class="container">
     <h1>AI 자막 번역기</h1>
-    <p>DeepXL의 문맥 예측 엔진을 이용해 자연스럽게 번역합니다.</p>
     
     <div class="config-box">
-        <label>🔑 DeepXL 주소</label>
-        <input type="text" id="apiAddress" value="http://localhost:1188/translate" placeholder="http://localhost:1188/translate">
+        <div class="lang-select-group">
+            <div>
+                <label for="sourceLang">입력 언어</label>
+                <select id="sourceLang">
+                    <option value="auto" selected>자동 인식</option>
+                    <option value="EN">영어 (EN)</option>
+                    <option value="KO">한국어 (KO)</option>
+                    <option value="JA">일본어 (JA)</option>
+                    <option value="ZH">중국어 (ZH)</option>
+                    <option value="ES">스페인어 (ES)</option>
+                    <option value="FR">프랑스어 (FR)</option>
+                    <option value="DE">독일어 (DE)</option>
+                </select>
+            </div>
+            <div>
+                <label for="targetLang">출력 언어</label>
+                <select id="targetLang">
+                    <option value="KO" selected>한국어 (KO)</option>
+                    <option value="EN">영어 (EN)</option>
+                    <option value="JA">일본어 (JA)</option>
+                    <option value="ZH">중국어 (ZH)</option>
+                    <option value="ES">스페인어 (ES)</option>
+                    <option value="FR">프랑스어 (FR)</option>
+                    <option value="DE">독일어 (DE)</option>
+                </select>
+            </div>
+        </div>
     </div>
 
     <div id="dropZone" class="file-label">
-        📂 SRT 파일을 여기에 떨어뜨리거나 클릭하세요
+        📂 자막 파일 열기
     </div>
-    <input type="file" id="srtFiles" accept=".srt" multiple style="display:none;">
+    <input type="file" id="srtFiles" accept=".srt,.smi,.txt" multiple style="display:none;">
     
-    <div id="fileCount" style="margin-bottom: 25px; font-weight: bold; color: #6b46c1;">선택된 파일 없음</div>
+    <!-- [변경] 직관적인 파일 목록 컨테이너 배치 -->
+    <div id="fileListContainer" class="file-list-container"></div>
     
     <div class="btn-group">
         <button id="startBtn" class="btn-start" onclick="startTranslation()">번역 시작</button>
@@ -74,6 +116,9 @@
         <progress id="progressBar" value="0" max="100"></progress>
         <div id="statusMessage"></div>
         <div id="etaMessage"></div>
+        
+        <!-- [새로 추가] 대형 모두 다운로드 버튼 -->
+        <button id="downloadAllBtn" class="btn-download-all" onclick="downloadAllFiles()">📦 번역 완료된 파일 모두 받기</button>
     </div>
     
     <div id="errorLogBox" class="error-log-box">
@@ -89,21 +134,26 @@
     const pauseBtn = document.getElementById('pauseBtn');
     const resumeBtn = document.getElementById('resumeBtn');
     const stopBtn = document.getElementById('stopBtn');
+    const downloadAllBtn = document.getElementById('downloadAllBtn');
+    const fileListContainer = document.getElementById('fileListContainer');
     
     const errorLogBox = document.getElementById('errorLogBox');
     const errorTextarea = document.getElementById('errorTextarea');
+
+    const apiAddress = "http://localhost:1188/translate";
 
     let selectedFiles = [];
     let isPaused = false;
     let isStopped = false;
     
-    let currentFile = null;
-    let currentLines = [];
-    let currentTranslatedLines = [];
+    // [핵심 데이터 구조] 번역이 완료된 결과 텍스트 파일들을 브라우저 메모리에 가두어 두는 저장소
+    let translatedStorage = [];
 
     window.addEventListener('DOMContentLoaded', () => {
-        const savedAddress = localStorage.getItem('my_deepxl_address');
-        if (savedAddress) document.getElementById('apiAddress').value = savedAddress;
+        const savedSrc = localStorage.getItem('my_deepxl_src_lang');
+        if (savedSrc) document.getElementById('sourceLang').value = savedSrc;
+        const savedTgt = localStorage.getItem('my_deepxl_tgt_lang');
+        if (savedTgt) document.getElementById('targetLang').value = savedTgt;
     });
 
     dropZone.addEventListener('click', () => fileInput.click());
@@ -112,12 +162,31 @@
     dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
     dropZone.addEventListener('drop', (e) => {
         e.preventDefault(); dropZone.classList.remove('dragover');
-        handleFiles(Array.from(e.dataTransfer.files).filter(f => f.name.endsWith('.srt')));
+        handleFiles(Array.from(e.dataTransfer.files).filter(f => f.name.match(/\.(srt|smi|txt)$/i)));
     });
 
+    // 파일 선택 시 목록을 UI에 깔끔하게 그리는 기능
     function handleFiles(files) {
         selectedFiles = Array.from(files);
-        document.getElementById('fileCount').innerText = `선택된 파일: ${selectedFiles.length}개`;
+        translatedStorage = []; // 저장소 초기화
+        downloadAllBtn.style.display = 'none';
+        
+        if (selectedFiles.length > 0) {
+            fileListContainer.innerHTML = '';
+            fileListContainer.style.display = 'block';
+            
+            selectedFiles.forEach((file, idx) => {
+                const item = document.createElement('div');
+                item.className = 'file-item';
+                item.innerHTML = `
+                    <span class="file-name">${idx + 1}. ${file.name}</span>
+                    <span class="file-status" id="fileStatus_${idx}">대기 중</span>
+                `;
+                fileListContainer.appendChild(item);
+            });
+        } else {
+            fileListContainer.style.display = 'none';
+        }
         errorLogBox.style.display = 'none';
     }
 
@@ -127,23 +196,40 @@
     function showControlButtons() { startBtn.style.display = 'none'; pauseBtn.style.display = 'block'; stopBtn.style.display = 'block'; }
     function hideControlButtons() { startBtn.style.display = 'block'; pauseBtn.style.display = 'none'; resumeBtn.style.display = 'none'; stopBtn.style.display = 'none'; }
 
+    // 단일 파일 다운로드 트리거
     function triggerDownload(fileName, content) {
-        const blob = new Blob([content], { type: 'text/srt' });
+        const blob = new Blob([content], { type: 'text/plain' });
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a'); a.href = url; a.download = fileName;
         document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url);
     }
 
+    // [새로 추가] 낱개 다운로드 핸들러
+    function downloadSingleFile(idx) {
+        const item = translatedStorage.find(t => t.index === idx);
+        if (item) triggerDownload(item.name, item.content);
+    }
+
+    // [새로 추가] 모두 다운로드 핸들러
+    function downloadAllFiles() {
+        translatedStorage.forEach(item => {
+            triggerDownload(item.name, item.content);
+        });
+    }
+
     async function startTranslation() {
-        const apiAddress = document.getElementById('apiAddress').value.trim();
-        if (!apiAddress) return alert('DeepXL 주소를 입력해 주세요!');
-        if (selectedFiles.length === 0) return alert('파일을 업로드해 주세요!');
+        if (selectedFiles.length === 0) return alert('자막 파일을 선택해 주세요!');
         
-        localStorage.setItem('my_deepxl_address', apiAddress);
+        const sourceLang = document.getElementById('sourceLang').value;
+        const targetLang = document.getElementById('targetLang').value;
+        
+        localStorage.setItem('my_deepxl_src_lang', sourceLang);
+        localStorage.setItem('my_deepxl_tgt_lang', targetLang);
         
         isStopped = false; isPaused = false;
         showControlButtons();
         errorLogBox.style.display = 'none';
+        downloadAllBtn.style.display = 'none';
         
         document.getElementById('progressContainer').style.display = 'block';
         const progressBar = document.getElementById('progressBar');
@@ -154,25 +240,33 @@
         for (let i = 0; i < selectedFiles.length; i++) {
             if (isStopped) break;
             
-            currentFile = selectedFiles[i];
+            const currentFile = selectedFiles[i];
             document.getElementById('currentFileName').innerText = `[${i + 1}/${selectedFiles.length}] ${currentFile.name}`;
             
+            // UI의 상태 표시를 '번역 중...'으로 변경
+            const statusLabel = document.getElementById(`fileStatus_${i}`);
+            if (statusLabel) {
+                statusLabel.innerText = "번역 중...";
+                statusLabel.className = "file-status loading";
+            }
+            
             const text = await currentFile.text();
-            currentLines = text.split(/\r?\n/);
-            currentTranslatedLines = [...currentLines];
+            const currentLines = text.split(/\r?\n/);
+            const currentTranslatedLines = [...currentLines];
+            
+            const isSrt = currentFile.name.toLowerCase().endsWith('.srt');
             
             const textTasks = [];
             for (let j = 0; j < currentLines.length; j++) {
                 const line = currentLines[j].trim();
-                if (line && !/^\d+$/.test(line) && !line.includes('-->')) {
+                if (line) {
+                    if (isSrt && (/^\d+$/.test(line) || line.includes('-->'))) continue;
                     textTasks.push({ index: j, text: line });
                 }
             }
 
             let totalTasks = textTasks.length;
             let startTime = Date.now();
-            
-            // [핵심 변경] 문맥 인식을 위해 25줄씩 단락으로 묶어서 한 번에 전송
             const chunkSize = 25; 
 
             for (let j = 0; j < totalTasks; j += chunkSize) {
@@ -181,8 +275,6 @@
                 if (isStopped) break;
 
                 const chunk = textTasks.slice(j, j + chunkSize);
-                
-                // 줄바꿈(\n)으로 연결하여 하나의 유기적인 문장 묶음으로 빌드
                 const textToTranslate = chunk.map(t => t.text).join('\n');
 
                 try {
@@ -191,33 +283,27 @@
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
                             text: textToTranslate,
-                            source_lang: "EN",
-                            target_lang: "KO"
+                            source_lang: sourceLang === 'auto' ? '' : sourceLang,
+                            target_lang: targetLang
                         })
                     });
                     
                     const data = await res.json();
+                    if (!res.ok || data.error) throw new Error(data.error || `서버 오류 (코드: ${res.status})`);
                     
-                    if (!res.ok || data.error) {
-                        throw new Error(data.error || `서버 응답 오류 (코드: ${res.status})`);
-                    }
-                    
-                    // proxy 서버 버전에 따른 데이터 추출 예외 처리
                     const rawTranslatedText = data.data || data.text || "";
                     const translatedLines = rawTranslatedText.split('\n').map(l => l.trim());
 
-                    // 안전망: 줄바꿈 개수가 일치하면 문맥 번역 데이터를 일대일 매핑
                     if (translatedLines.length === chunk.length) {
                         for (let k = 0; k < chunk.length; k++) {
                             currentTranslatedLines[chunk[k].index] = translatedLines[k];
                         }
                     } else {
-                        // 대피소: DeepL이 문장을 임의로 합쳐서 줄 수가 안 맞으면, 싱크 보호를 위해 이 묶음만 실시간 개별 직역 처리
                         for (let k = 0; k < chunk.length; k++) {
                             const singleRes = await fetch(apiAddress, {
                                 method: 'POST',
                                 headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify({ text: chunk[k].text, source_lang: "EN", target_lang: "KO" })
+                                body: JSON.stringify({ text: chunk[k].text, source_lang: sourceLang === 'auto' ? '' : sourceLang, target_lang: targetLang })
                             });
                             const singleData = await singleRes.json();
                             currentTranslatedLines[chunk[k].index] = singleData.data || singleData.text || chunk[k].text;
@@ -226,8 +312,9 @@
 
                 } catch (e) {
                     console.error(e);
-                    errorTextarea.value = `[연결 오류]\nDeepXL 서버가 켜져 있는지, 혹은 주소가 올바른지 확인해 주세요.\n상세: ${e.message}`;
+                    errorTextarea.value = `[연결 오류]\n로컬 DeepXL 서버가 켜져 있는지 확인해 주세요.\n상세: ${e.message}`;
                     errorLogBox.style.display = 'block';
+                    if (statusLabel) { statusLabel.innerText = "실패"; statusLabel.className = "file-status"; }
                     stopTranslation();
                     break;
                 }
@@ -245,12 +332,28 @@
                     etaMessage.innerText = mins > 0 ? `남은 시간: 약 ${mins}분 ${secs}초` : `남은 시간: 약 ${secs}초`;
                 }
                 
-                // 로컬 통신이므로 대기 시간 0.2초로 극단적 단축 (초고속 배포 가능)
                 await new Promise(res => setTimeout(res, 200));
             }
 
+            // [변경 영역] 자동 다운로드 팝업을 전면 제거하고 메모리 보관소에 적재
             if (!isStopped && errorLogBox.style.display !== 'block') {
-                triggerDownload(currentFile.name.replace('.srt', '_ko.srt'), currentTranslatedLines.join('\n'));
+                const extMatch = currentFile.name.match(/\.([a-z0-9]+)$/i);
+                const ext = extMatch ? extMatch[1] : 'srt';
+                const baseName = currentFile.name.replace(/\.[^/.]+$/, "");
+                const targetFileName = `${baseName}_${targetLang.toLowerCase()}.${ext}`;
+                
+                // 결과 메모리에 세이브
+                translatedStorage.push({
+                    index: i,
+                    name: targetFileName,
+                    content: currentTranslatedLines.join('\n')
+                });
+                
+                // UI를 다운로드 버튼으로 즉각 스위칭
+                if (statusLabel) {
+                    statusLabel.innerHTML = `<button class="btn-mini-download" onclick="downloadSingleFile(${i})">다운로드</button>`;
+                    statusLabel.className = "file-status";
+                }
             }
         }
 
@@ -258,6 +361,10 @@
         etaMessage.innerText = '';
         if (!isStopped && errorLogBox.style.display !== 'block') {
             statusMessage.innerText = '🎉 모든 파일 번역 완료!';
+            // 여러 개 파일일 때 유용한 대형 '모두 다운로드' 버튼 활성화
+            if (selectedFiles.length > 1) {
+                downloadAllBtn.style.display = 'block';
+            }
         }
     }
 </script>
