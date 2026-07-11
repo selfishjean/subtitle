@@ -177,7 +177,7 @@
             </div>
             <div style="flex: 1;">
                 <label for="chunkSizeInput">📦 청크 크기</label>
-                <input type="number" id="chunkSizeInput" value="40" min="5" max="100">
+                <input type="number" id="chunkSizeInput" value="150" min="10" max="300">
             </div>
         </div>
     </div>
@@ -321,8 +321,8 @@
             });
         });
 
-        let retryCount = 3;
-        let delayTime = 2000;
+        let retryCount = 4;
+        let delayTime = 3000;
 
         while (retryCount > 0) {
             try {
@@ -335,8 +335,8 @@
             } catch (e) {
                 if (e.message.includes('429') && retryCount > 1) {
                     retryCount--;
-                    await new Promise(res => setTimeout(res, delayTime));
-                    delayTime *= 1.5;
+                    await new Promise(res => setTimeout(res, delayTime + Math.random() * 1000));
+                    delayTime *= 2;
                 } else {
                     throw e;
                 }
@@ -399,9 +399,10 @@
         const sliderVal = document.getElementById('toneSlider').value;
         const toneStyle = sliderVal === "0" ? "less" : (sliderVal === "2" ? "more" : "default");
         const protectedWords = document.getElementById('protectedWords').value.split(',').map(w => w.trim());
-        const chunkSize = parseInt(document.getElementById('chunkSizeInput').value) || 40;
+        const chunkSize = parseInt(document.getElementById('chunkSizeInput').value) || 150;
 
-        startBtn.disabled = true;
+        isStopped = false; isPaused = false;
+        showControlButtons();
         textResultWrapper.style.display = 'none';
         errorLogBox.style.display = 'none';
         globalProgressWrap.style.display = 'block';
@@ -428,6 +429,7 @@
 
         let startTime = Date.now();
         let completedTasks = 0;
+        let textErrorOccurred = null;
 
         const chunks = [];
         for (let j = 0; j < totalTasks; j += chunkSize) {
@@ -438,30 +440,29 @@
         const concurrencyLimit = 3;
 
         async function worker() {
-            while (chunkIndex < chunks.length && !isStopped) {
+            while (chunkIndex < chunks.length && !isStopped && !textErrorOccurred) {
                 while (isPaused) { await new Promise(res => setTimeout(res, 200)); }
-                if (isStopped) break;
+                if (isStopped || textErrorOccurred) break;
                 
                 const currentChunkIndex = chunkIndex++;
                 if (currentChunkIndex >= chunks.length) break;
                 
                 const chunk = chunks[currentChunkIndex];
-                const textToTranslate = chunk.map(t => t.text).join('\n');
+                const textToTranslate = chunk.map((t, idx) => `[${idx}] ${t.text}`).join('\n');
 
                 try {
                     const rawTranslatedText = await protectAndTranslate(textToTranslate, sourceLang, targetLang, toneStyle, engine, protectedWords);
                     const translatedLines = rawTranslatedText.split('\n').map(l => l.trim());
 
-                    if (translatedLines.length === chunk.length) {
-                        for (let k = 0; k < chunk.length; k++) {
-                            currentTranslatedLines[chunk[k].index] = translatedLines[k];
+                    translatedLines.forEach(l => {
+                        const match = l.match(/^\[(\d+)\]\s*(.*)/);
+                        if (match) {
+                            const localIdx = parseInt(match[1]);
+                            if (chunk[localIdx]) {
+                                currentTranslatedLines[chunk[localIdx].index] = match[2];
+                            }
                         }
-                    } else {
-                        for (let k = 0; k < chunk.length; k++) {
-                            const singleText = await protectAndTranslate(chunk[k].text, sourceLang, targetLang, toneStyle, engine, protectedWords);
-                            currentTranslatedLines[chunk[k].index] = singleText;
-                        }
-                    }
+                    });
 
                     completedTasks += chunk.length;
                     let currentPercent = Math.min(100, Math.floor((completedTasks / totalTasks) * 100));
@@ -475,29 +476,24 @@
                     globalStatusText.innerText = `텍스트 번역 중 (${currentPercent}%) | 남은 시간: ${etaText}`;
 
                 } catch (e) {
-                    throw e;
+                    textErrorOccurred = e;
+                    break;
                 }
             }
         }
 
-        try {
-            const workers = Array(concurrencyLimit).fill(null).map(() => worker());
-            await Promise.all(workers);
-        } catch (e) {
-            console.error(e);
-            errorTextarea.value = `[텍스트 번역 에러]\n사유: ${e.message}`;
-            errorLogBox.style.display = 'block';
-            hideControlButtons();
-            globalProgressWrap.style.display = 'none';
-            return;
-        }
+        const workers = Array(concurrencyLimit).fill(null).map(() => worker());
+        await Promise.all(workers);
 
         hideControlButtons();
         globalProgressWrap.style.display = 'none';
 
-        if (!isStopped && errorLogBox.style.display !== 'block') {
-            document.getElementById('textOutput').value = currentTranslatedLines.join('\n');
-            textResultWrapper.style.display = 'flex';
+        document.getElementById('textOutput').value = currentTranslatedLines.join('\n');
+        textResultWrapper.style.display = 'flex';
+
+        if (textErrorOccurred) {
+            errorTextarea.value = `[텍스트 번역 일부 에러]\n사유: ${textErrorOccurred.message}\n현재까지 수집된 부분 번역만 결과창에 출력되었습니다.`;
+            errorLogBox.style.display = 'block';
         }
     }
 
@@ -508,7 +504,7 @@
         const sliderVal = document.getElementById('toneSlider').value;
         const toneStyle = sliderVal === "0" ? "less" : (sliderVal === "2" ? "more" : "default");
         const protectedWords = document.getElementById('protectedWords').value.split(',').map(w => w.trim());
-        const chunkSize = parseInt(document.getElementById('chunkSizeInput').value) || 40;
+        const chunkSize = parseInt(document.getElementById('chunkSizeInput').value) || 150;
         
         localStorage.setItem('my_protected_words', document.getElementById('protectedWords').value);
         localStorage.setItem('my_chunk_size', chunkSize);
@@ -546,6 +542,7 @@
             let totalTasks = textTasks.length;
             let startTime = Date.now();
             let completedTasks = 0;
+            let fileErrorOccurred = null;
 
             const chunks = [];
             for (let j = 0; j < totalTasks; j += chunkSize) {
@@ -556,30 +553,29 @@
             const concurrencyLimit = 3;
 
             async function worker() {
-                while (chunkIndex < chunks.length && !isStopped) {
+                while (chunkIndex < chunks.length && !isStopped && !fileErrorOccurred) {
                     while (isPaused) { await new Promise(res => setTimeout(res, 200)); }
-                    if (isStopped) break;
+                    if (isStopped || fileErrorOccurred) break;
                     
                     const currentChunkIndex = chunkIndex++;
                     if (currentChunkIndex >= chunks.length) break;
                     
                     const chunk = chunks[currentChunkIndex];
-                    const textToTranslate = chunk.map(t => t.text).join('\n');
+                    const textToTranslate = chunk.map((t, idx) => `[${idx}] ${t.text}`).join('\n');
 
                     try {
                         const rawTranslatedText = await protectAndTranslate(textToTranslate, sourceLang, targetLang, toneStyle, engine, protectedWords);
                         const translatedLines = rawTranslatedText.split('\n').map(l => l.trim());
 
-                        if (translatedLines.length === chunk.length) {
-                            for (let k = 0; k < chunk.length; k++) {
-                                currentTranslatedLines[chunk[k].index] = translatedLines[k];
+                        translatedLines.forEach(l => {
+                            const match = l.match(/^\[(\d+)\]\s*(.*)/);
+                            if (match) {
+                                const localIdx = parseInt(match[1]);
+                                if (chunk[localIdx]) {
+                                    currentTranslatedLines[chunk[localIdx].index] = match[2];
+                                }
                             }
-                        } else {
-                            for (let k = 0; k < chunk.length; k++) {
-                                const singleText = await protectAndTranslate(chunk[k].text, sourceLang, targetLang, toneStyle, engine, protectedWords);
-                                currentTranslatedLines[chunk[k].index] = singleText;
-                            }
-                        }
+                        });
 
                         completedTasks += chunk.length;
                         let currentPercent = Math.min(100, Math.floor((completedTasks / totalTasks) * 100));
@@ -590,34 +586,38 @@
                         const mins = Math.floor(remainingTime / 60); const secs = remainingTime % 60;
                         const etaText = mins > 0 ? `약 ${mins}분 ${secs}초` : `약 ${secs}초`;
 
-                        if (statusLabel && !isStopped) {
+                        if (statusLabel && !isStopped && !fileErrorOccurred) {
                             statusLabel.innerText = `번역 중 (${currentPercent}%) | 남은 시간: ${etaText}`;
                         }
 
                     } catch (e) {
-                        throw e;
+                        fileErrorOccurred = e;
+                        break;
                     }
                 }
             }
 
-            try {
-                const workers = Array(concurrencyLimit).fill(null).map(() => worker());
-                await Promise.all(workers);
-            } catch (e) {
-                console.error(e);
-                errorTextarea.value = `[파일 번역 에러]\n사유: ${e.message}`;
+            const workers = Array(concurrencyLimit).fill(null).map(() => worker());
+            await Promise.all(workers);
+
+            const extMatch = currentFile.name.match(/\.([a-z0-9]+)$/i);
+            const ext = extMatch ? extMatch[1] : 'srt';
+            const baseName = currentFile.name.replace(/\.[^/.]+$/, "");
+
+            if (fileErrorOccurred) {
+                const targetFileName = `${baseName}_ko_미완성.${ext}`;
+                translatedStorage.push({ index: i, name: targetFileName, content: currentTranslatedLines.join('\n') });
+                if (statusLabel) {
+                    statusLabel.innerHTML = `<span style="color: #e53e3e;">일부 에러</span> <button type="button" class="btn-list-download" onclick="document.downloadSingleFile(${i})">다운로드(미완성)</button>`;
+                }
+                errorTextarea.value = `[파일 번역 중단] 사유: ${fileErrorOccurred.message}\n현재 차선까지 성공한 번역 대사는 리스트의 다운로드 단추로 안전하게 백업 및 저장이 가능합니다.`;
                 errorLogBox.style.display = 'block';
-                if (statusLabel) { statusLabel.innerText = "실패"; statusLabel.style.color = "#e53e3e"; }
-                stopTranslation();
+                stopPipeline();
                 break;
             }
 
-            if (!isStopped && errorLogBox.style.display !== 'block') {
-                const extMatch = currentFile.name.match(/\.([a-z0-9]+)$/i);
-                const ext = extMatch ? extMatch[1] : 'srt';
-                const baseName = currentFile.name.replace(/\.[^/.]+$/, "");
+            if (!isStopped && !fileErrorOccurred) {
                 const targetFileName = `${baseName}_ko.${ext}`;
-                
                 translatedStorage.push({ index: i, name: targetFileName, content: currentTranslatedLines.join('\n') });
                 if (statusLabel) {
                     statusLabel.innerHTML = `<button type="button" class="btn-list-download" onclick="document.downloadSingleFile(${i})">다운로드</button>`;
@@ -628,7 +628,7 @@
         hideControlButtons();
         globalProgressWrap.style.display = 'none';
         if (!isStopped && errorLogBox.style.display !== 'block') {
-            if (selectedFiles.length > 1) downloadAllBtn.style.display = 'block';
+            if (translatedStorage.length > 1) downloadAllBtn.style.display = 'block';
         }
     }
 </script>
