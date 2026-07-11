@@ -38,7 +38,6 @@
         #statusMessage { font-size: 13px; color: #4a5568; font-weight: bold; line-height: 1.5; }
         #etaMessage { font-size: 13px; color: #dd6b20; font-weight: bold; text-align: right; margin-top: -18px; }
         
-        /* [핵심 추가] 복사 가능한 붉은색 에러 로그 박스 스타일 */
         .error-log-box { display: none; margin-top: 20px; padding: 15px; background-color: #fff5f5; border: 1px solid #fed7d7; border-radius: 8px; text-align: left; }
         .error-log-box h4 { margin: 0 0 8px 0; color: #c53030; font-size: 14px; }
         .error-log-box textarea { width: 95%; height: 100px; font-family: monospace; font-size: 12px; color: #9b2c2c; background: #fff; border: 1px solid #feb2b2; border-radius: 4px; padding: 8px; resize: none; }
@@ -91,7 +90,6 @@
         <div id="etaMessage"></div>
     </div>
     
-    <!-- [핵심 추가] 에러 발생 시 텍스트를 드래그 복사할 수 있는 상자 -->
     <div id="errorLogBox" class="error-log-box">
         <h4>⚠️ 에러가 발생하여 번역이 중단되었습니다.</h4>
         <p style="font-size:11px; color:#718096; margin:0 0 8px 0; text-align:left;">아래 텍스트 상자 안의 내용을 전체 선택(Ctrl+A) 후 복사(Ctrl+C)해서 전달해 주세요.</p>
@@ -137,9 +135,10 @@
     function handleFiles(files) {
         selectedFiles = Array.from(files);
         document.getElementById('fileCount').innerText = `선택된 파일: ${selectedFiles.length}개`;
-        errorLogBox.style.display = 'none'; // 새 파일 등록 시 기존 에러창 초기화
+        errorLogBox.style.display = 'none';
     }
 
+    // 버튼 제어
     function pauseTranslation() { isPaused = true; pauseBtn.style.display = 'none'; resumeBtn.style.display = 'block'; document.getElementById('statusMessage').innerText = `⏸️ 일시정지됨`; }
     function resumeTranslation() { isPaused = false; resumeBtn.style.display = 'none'; pauseBtn.style.display = 'block'; }
     function stopTranslation() { isStopped = true; isPaused = false; hideControlButtons(); document.getElementById('statusMessage').innerText = `🛑 중지됨`; }
@@ -166,7 +165,7 @@
         
         isStopped = false; isPaused = false;
         showControlButtons();
-        errorLogBox.style.display = 'none'; // 복사 상자 숨김 초기화
+        errorLogBox.style.display = 'none';
         
         document.getElementById('progressContainer').style.display = 'block';
         const progressBar = document.getElementById('progressBar');
@@ -225,16 +224,20 @@ ${formattedLines}`;
                     
                     const data = await res.json();
                     
-                    // [에러 포착 고도화] 에러가 감지되면 즉시 문구를 텍스트 박스에 넣고 전체 중단시킵니다.
-                    if (data.error) {
-                        throw new Error(`[구글 API 오류]\n코드: ${data.error.code}\n메시지: ${data.error.message}\n상태: ${data.error.status}`);
+                    // 429 한도 초과 감지 시에만 20초 대기
+                    if (data.error && data.error.code === 429) {
+                        etaMessage.innerText = "";
+                        for (let countdown = 20; countdown > 0; countdown--) {
+                            if (isStopped) break;
+                            statusMessage.innerText = `⚠️ 한도 도달! 안전을 위해 ${countdown}초 후 자동 재시도합니다...`;
+                            await new Promise(res => setTimeout(res, 1000));
+                        }
+                        j -= chunkSize; 
+                        continue;       
                     }
                     
-                    if (!data.candidates || data.candidates.length === 0) {
-                        if (data.promptFeedback && data.promptFeedback.blockReason) {
-                            throw new Error(`[AI 차단 알림]\n사유: 안전 규정 정책에 의해 문장이 차단되었습니다. (${data.promptFeedback.blockReason})`);
-                        }
-                        throw new Error(`[시스템 통신 규격 에러]\n구글 서버에서 빈 데이터를 반환했습니다.\n전체 데이터: ${JSON.stringify(data)}`);
+                    if (data.error) {
+                        throw new Error(`[구글 API 오류]\n코드: ${data.error.code}\n메시지: ${data.error.message}`);
                     }
                     
                     const responseText = data.candidates[0].content.parts[0].text.trim();
@@ -250,7 +253,6 @@ ${formattedLines}`;
                     });
 
                 } catch (e) {
-                    // 예외 발생 시, 루프를 더 이상 돌리지 않고 에러로그에 박제 후 멈춤!
                     console.error(e);
                     errorTextarea.value = e.message || e.toString() || "알 수 없는 시스템 통신 장애 발생";
                     errorLogBox.style.display = 'block';
@@ -271,10 +273,11 @@ ${formattedLines}`;
                     etaMessage.innerText = mins > 0 ? `남은 시간: 약 ${mins}분 ${secs}초` : `남은 시간: 약 ${secs}초`;
                 }
                 
-                await new Promise(res => setTimeout(res, 4500));
+                // [속도 최적화] 무조건 4.5초 쉬던 것을 '0.5초' 기습 지연으로 전면 단축!
+                await new Promise(res => setTimeout(res, 500));
             }
 
-            if (!isStopped) {
+            if (!isStopped && errorLogBox.style.display !== 'block') {
                 triggerDownload(currentFile.name.replace('.srt', '_ko.srt'), currentTranslatedLines.join('\n'));
             }
         }
