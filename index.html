@@ -46,7 +46,7 @@
     <p>대량의 SRT 파일을 오류 없이 자연스럽게 번역합니다.</p>
     
     <div class="config-box">
-        <label>🔑 무료 Gemini API 키 입력</label>
+        <label>🔑 무료 Gemini API 키 입력 (최초 1회만 입력)</label>
         <input type="password" id="apiKey" placeholder="AI Studio에서 발급받은 키를 붙여넣으세요">
         
         <label>🗣️ 번역 말투 선택</label>
@@ -95,6 +95,18 @@
     let selectedFiles = [];
     let isPaused = false;
     let isStopped = false;
+    
+    let currentFile = null;
+    let currentLines = [];
+    let currentTranslatedLines = [];
+
+    // --- [새로 추가] 페이지가 열릴 때 내 브라우저에 저장된 키가 있다면 자동으로 불러오기 ---
+    window.addEventListener('DOMContentLoaded', () => {
+        const savedKey = localStorage.getItem('my_gemini_api_key');
+        if (savedKey) {
+            document.getElementById('apiKey').value = savedKey;
+        }
+    });
 
     dropZone.addEventListener('click', () => fileInput.click());
     fileInput.addEventListener('change', (e) => handleFiles(e.target.files));
@@ -123,11 +135,13 @@
         document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url);
     }
 
-    // --- 최적화된 대용량 묶음 및 싱크 방어형 엔진 ---
     async function startTranslation() {
         const apiKey = document.getElementById('apiKey').value.trim();
         if (!apiKey) return alert('Gemini API 키를 입력해 주세요!');
         if (selectedFiles.length === 0) return alert('파일을 업로드해 주세요!');
+        
+        // --- [새로 추가] 입력된 API 키를 내 브라우저 저장소에 안전하게 보관 ---
+        localStorage.setItem('my_gemini_api_key', apiKey);
         
         isStopped = false; isPaused = false;
         showControlButtons();
@@ -146,11 +160,11 @@
             document.getElementById('currentFileName').innerText = `[${i + 1}/${selectedFiles.length}] ${currentFile.name}`;
             
             const text = await currentFile.text();
-            const lines = text.split(/\r?\n/);
-            const currentTranslatedLines = [...lines];
+            currentLines = text.split(/\r?\n/);
+            currentTranslatedLines = [...currentLines];
             
             const textTasks = [];
-            for (let j = 0; j < lines.length; j++) {
+            for (let j = 0; j < currentLines.length; j++) {
                 const line = currentLines[j].trim();
                 if (line && !/^\d+$/.test(line) && !line.includes('-->')) {
                     textTasks.push({ index: j, text: line });
@@ -159,7 +173,7 @@
 
             let totalTasks = textTasks.length;
             let startTime = Date.now();
-            const chunkSize = 100; // [대격변] 100줄씩 뭉쳐서 문맥 왜곡 방지 및 한도 방어
+            const chunkSize = 100; 
 
             for (let j = 0; j < totalTasks; j += chunkSize) {
                 if (isStopped) break;
@@ -167,8 +181,6 @@
                 if (isStopped) break;
 
                 const chunk = textTasks.slice(j, j + chunkSize);
-                
-                // 각 대사 줄마다 고유 고리 번호 [ID]를 달아주어 번역 데이터의 유실 철저히 방어
                 const formattedLines = chunk.map(t => `[${t.index}] ${t.text}`).join('\n');
 
                 const prompt = `You are an expert subtitle translator. Translate the following video subtitles into natural Korean.
@@ -190,10 +202,15 @@ ${formattedLines}`;
                     });
                     const data = await res.json();
                     
+                    if (data.error) {
+                        alert(`구글 API 에러 발생: ${data.error.message}`);
+                        stopTranslation();
+                        break;
+                    }
+                    
                     const responseText = data.candidates[0].content.parts[0].text.trim();
                     const translatedLinesArr = responseText.split('\n');
 
-                    // 받아온 데이터에서 [ID] 정규식을 파싱하여 정확한 줄 위치에 강제 매핑시킴 (싱크 100% 보장)
                     translatedLinesArr.forEach(l => {
                         const match = l.trim().match(/^\[(\d+)\]\s*(.*)/);
                         if (match) {
@@ -204,10 +221,9 @@ ${formattedLines}`;
                     });
 
                 } catch (e) {
-                    console.error("번역 에러 발생, 원문 유지:", e);
+                    console.error("번역 에러 발생:", e);
                 }
 
-                // UI 업데이트
                 let currentProgress = Math.min(j + chunkSize, totalTasks);
                 let currentPercent = Math.floor((currentProgress / totalTasks) * 100);
                 progressBar.value = currentPercent;
@@ -221,7 +237,6 @@ ${formattedLines}`;
                     etaMessage.innerText = mins > 0 ? `남은 시간: 약 ${mins}분 ${secs}초` : `남은 시간: 약 ${secs}초`;
                 }
                 
-                // 15 RPM 무료 서버 제한을 절대 넘지 않는 완벽한 안전 지연 패딩 (4.5초)
                 await new Promise(res => setTimeout(res, 4500));
             }
 
