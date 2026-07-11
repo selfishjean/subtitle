@@ -12,53 +12,64 @@
         input[type="file"] { display: none; }
         
         .config-box { background: #f7fafc; padding: 20px; border-radius: 8px; margin-bottom: 20px; text-align: left; border: 1px solid #e2e8f0; }
+        .config-box label { font-size: 13px; font-weight: bold; color: #4a5568; display: block; margin-bottom: 8px; }
+        
+        .engine-radio-group { display: flex; gap: 20px; background: white; padding: 10px; border-radius: 6px; border: 1px solid #edf2f7; margin-bottom: 15px; }
+        .engine-radio-group label { display: flex; align-items: center; gap: 6px; font-size: 13px; font-weight: normal; color: #4a5568; margin: 0; cursor: pointer; }
+        .engine-radio-group input[type="radio"] { margin: 0; cursor: pointer; }
+
         .lang-select-group { display: flex; gap: 15px; margin-bottom: 12px; }
+        .lang-select-group:last-child { margin-bottom: 0; }
         .lang-select-group div { flex: 1; }
-        .lang-select-group label { font-size: 13px; font-weight: bold; color: #4a5568; display: block; }
-        .lang-select-group select { width: 100%; padding: 8px; border: 1px solid #cbd5e0; border-radius: 4px; font-size: 13px; margin-top: 6px; cursor: pointer; }
+        .lang-select-group select, .lang-select-group input[type="text"], .lang-select-group input[type="number"] { width: 100%; padding: 8px; border: 1px solid #cbd5e0; border-radius: 4px; font-size: 13px; margin-top: 6px; cursor: pointer; box-sizing: border-box; }
 
-        /* 작업 모드 탭 스타일 */
-        .tab-group { display: flex; gap: 5px; margin-bottom: 15px; border-bottom: 2px solid #edf2f7; padding-bottom: 5px; }
-        .tab-btn { background: none; color: #718096; border: none; padding: 10px; font-size: 14px; cursor: pointer; font-weight: bold; flex: none; border-radius: 4px 4px 0 0; }
-        .tab-btn.active { color: #6b46c1; border-bottom: 3px solid #6b46c1; background: #f7fafc; }
+        .slider-wrap { margin-top: 6px; background: white; padding: 12px; border-radius: 6px; border: 1px solid #edf2f7; }
+        .slider-wrap input[type="range"] { width: 100%; cursor: pointer; accent-color: #6b46c1; }
+        .slider-labels { display: flex; justify-content: space-between; font-size: 11px; color: #718096; margin-top: 4px; padding: 0 2px; }
 
-        /* 텍스트 번역 영역 스타일 */
-        .text-mode-container { display: none; text-align: left; margin-bottom: 20px; }
-        .textarea-wrap { display: flex; flex-direction: column; gap: 10px; margin-bottom: 15px; }
-        textarea { width: 96%; height: 120px; padding: 10px; border: 1px solid #cbd5e0; border-radius: 8px; font-size: 13px; resize: vertical; font-family: inherit; }
+        .advanced-trigger { font-size: 13px; font-weight: bold; color: #6b46c1; text-align: left; margin-bottom: 15px; cursor: pointer; display: inline-block; user-select: none; }
+        .advanced-box { display: none; background: #edf2f7; padding: 15px; border-radius: 6px; margin-bottom: 20px; text-align: left; border: 1px solid #cbd5e0; }
+
+        .main-workspace { display: flex; flex-direction: column; gap: 20px; margin-bottom: 20px; }
         
-        .file-mode-container { display: block; }
-        .file-label { display: block; background: #f7fafc; border: 2px dashed #b794f4; padding: 40px 20px; border-radius: 12px; cursor: pointer; margin-bottom: 20px; color: #4a5568; font-weight: bold; transition: all 0.2s; font-size: 16px; }
-        .file-label.dragover { background: #e8dff5; border-color: #6b46c1; transform: scale(1.02); }
+        .file-label { display: block; background: #f7fafc; border: 2px dashed #b794f4; padding: 30px 20px; border-radius: 12px; cursor: pointer; color: #4a5568; font-weight: bold; transition: all 0.2s; font-size: 16px; }
+        .file-label.dragover { background: #e8dff5; border-color: #6b46c1; transform: scale(1.01); }
         
-        .file-list-container { text-align: left; background: #fafafa; border: 1px solid #e2e8f0; border-radius: 8px; padding: 15px; margin-bottom: 25px; max-height: 150px; overflow-y: auto; display: none; }
-        .file-item { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid #edf2f7; font-size: 13px; }
+        .file-list-container { text-align: left; background: #fafafa; border: 1px solid #e2e8f0; border-radius: 8px; padding: 15px; max-height: 140px; overflow-y: auto; display: none; }
+        .file-item { display: flex; justify-content: space-between; align-items: center; padding: 6px 0; border-bottom: 1px solid #edf2f7; font-size: 13px; }
         .file-item:last-child { border-bottom: none; }
         .file-name { color: #4a5568; font-weight: 500; }
         .file-status { font-size: 12px; font-weight: bold; color: #a0aec0; }
         
-        .btn-mini-download { background: #3182ce; color: white; border: none; padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: bold; cursor: pointer; }
+        .textarea-block { text-align: left; display: flex; flex-direction: column; gap: 8px; }
+        .textarea-block label { font-size: 13px; font-weight: bold; color: #4a5568; }
+        textarea { width: 96%; height: 100px; padding: 10px; border: 1px solid #cbd5e0; border-radius: 8px; font-size: 13px; resize: vertical; font-family: inherit; box-sizing: border-box; width: 100%; }
+        
+        .text-action-row { display: flex; justify-content: flex-end; margin-top: -4px; }
+        .btn-mini-download { background: #3182ce; color: white; border: none; padding: 5px 10px; border-radius: 4px; font-size: 11px; font-weight: bold; cursor: pointer; display: none; }
+        .btn-mini-download:hover { background: #2b6cb0; }
 
-        .btn-group { display: flex; gap: 10px; margin-bottom: 15px; }
-        button { color: white; border: none; padding: 15px 20px; border-radius: 8px; font-size: 15px; font-weight: bold; cursor: pointer; flex: 1; transition: background 0.2s; }
+        .btn-group { display: flex; gap: 10px; margin-top: 10px; }
+        button.main-action { color: white; border: none; padding: 15px 20px; border-radius: 8px; font-size: 15px; font-weight: bold; cursor: pointer; flex: 1; transition: background 0.2s; }
         
         .btn-start { background: #6b46c1; } .btn-start:hover { background: #553c9a; }
         .btn-pause { background: #dd6b20; display: none; } .btn-pause:hover { background: #c05621; }
         .btn-resume { background: #3182ce; display: none; } .btn-resume:hover { background: #2b6cb0; }
         .btn-stop { background: #e53e3e; display: none; } .btn-stop:hover { background: #9b2c2c; }
-        .btn-download-all { background: #2f855a; display: none; margin-top: 15px; width: 100%; }
+        .btn-download-all { background: #2f855a; display: none; width: 100%; margin-top: 15px; }
+        .btn-download-all:hover { background: #22543d; }
         
-        .progress-container { margin-top: 25px; display: none; text-align: left; }
-        .progress-text { font-size: 14px; color: #4a5568; font-weight: bold; margin-bottom: 8px; display: flex; justify-content: space-between; }
+        .progress-container { margin-top: 25px; display: none; text-align: left; border-top: 2px solid #edf2f7; padding-top: 20px; }
+        .progress-header { display: flex; justify-content: space-between; font-size: 13px; color: #4a5568; font-weight: bold; margin-bottom: 8px; }
         progress { width: 100%; height: 12px; border-radius: 6px; appearance: none; }
         progress::-webkit-progress-bar { background-color: #edf2f7; border-radius: 6px; }
         progress::-webkit-progress-value { background-color: #6b46c1; border-radius: 6px; }
         
-        .status-dashboard { display: flex; justify-content: space-between; font-size: 12px; color: #718096; margin-top: 6px; font-weight: bold; }
+        .status-dashboard { display: flex; justify-content: space-between; font-size: 12px; color: #718096; margin-top: 8px; font-weight: bold; }
         #etaMessage { color: #dd6b20; }
 
         .error-log-box { display: none; margin-top: 20px; padding: 15px; background-color: #fff5f5; border: 1px solid #fed7d7; border-radius: 8px; text-align: left; }
-        .error-log-box textarea { width: 95%; height: 80px; font-family: monospace; font-size: 12px; color: #9b2c2c; background: #fff; border: 1px solid #feb2b2; border-radius: 4px; padding: 8px; resize: none; }
+        .error-log-box textarea { width: 100%; height: 80px; font-family: monospace; font-size: 12px; color: #9b2c2c; background: #fff; border: 1px solid #feb2b2; border-radius: 4px; padding: 8px; resize: none; box-sizing: border-box; }
     </style>
 </head>
 <body>
@@ -67,15 +78,10 @@
     <h1>AI 자막 번역기</h1>
     
     <div class="config-box">
-        <div class="lang-select-group">
-            <!-- [추가] 엔진 선택 라인 - DeepXL 및 완전 무료 구글 Open API 탑재 -->
-            <div>
-                <label for="engineSelect">번역 엔진</label>
-                <select id="engineSelect" onchange="toggleToneDropdown()">
-                    <option value="google_free" selected>Google 번역 (무료/무제한/키필요없음)</option>
-                    <option value="deepxl">DeepXL 로컬 엔진 (구어체 스타일 제어 가능)</option>
-                </select>
-            </div>
+        <label>번역 엔진</label>
+        <div class="engine-radio-group">
+            <label><input type="radio" name="engineRadio" value="google_free" checked onchange="toggleEngineRoute()"> Google 번역</label>
+            <label><input type="radio" name="engineRadio" value="deepxl" onchange="toggleEngineRoute()"> DeepXL 로컬 엔진</label>
         </div>
         
         <div class="lang-select-group">
@@ -83,71 +89,90 @@
                 <label for="sourceLang">입력 언어</label>
                 <select id="sourceLang">
                     <option value="auto" selected>자동 인식</option>
-                    <option value="en">영어 (EN)</option>
-                    <option value="ko">한국어 (KO)</option>
-                    <option value="ja">일본어 (JA)</option>
-                    <option value="zh-CN">중국어 (ZH)</option>
-                    <option value="es">스페인어 (ES)</option>
-                    <option value="fr">프랑스어 (FR)</option>
-                    <option value="de">독일어 (DE)</option>
+                    <option value="en">영어</option>
+                    <option value="ko">한국어</option>
+                    <option value="ja">일본어</option>
+                    <option value="zh-CN">중국어</option>
+                    <option value="es">스페인어</option>
+                    <option value="fr">프랑스어</option>
+                    <option value="de">독일어</option>
                 </select>
             </div>
             <div>
                 <label for="targetLang">출력 언어</label>
                 <select id="targetLang">
-                    <option value="ko" selected>한국어 (KO)</option>
-                    <option value="en">영어 (EN)</option>
-                    <option value="ja">일본어 (JA)</option>
-                    <option value="zh-CN">중국어 (ZH)</option>
-                    <option value="es">스페인어 (ES)</option>
-                    <option value="fr">프랑스어 (FR)</option>
-                    <option value="de">독일어 (DE)</option>
+                    <option value="ko" selected>한국어</option>
+                    <option value="en">영어</option>
+                    <option value="ja">일본어</option>
+                    <option value="zh-CN">중국어</option>
+                    <option value="es">스페인어</option>
+                    <option value="fr">프랑스어</option>
+                    <option value="de">독일어</option>
                 </select>
             </div>
         </div>
         
         <div class="lang-select-group" id="toneSelectWrap" style="display:none;">
             <div>
-                <label for="toneSelect">말투 스타일 (DeepXL 전용)</label>
-                <select id="toneSelect">
-                    <option value="less" selected>구어체 (자연스러운 대화문/해요체)</option>
-                    <option value="default">일반 (엔진 기본값)</option>
-                    <option value="more">문어체 (격식있는 설명조/합니다체)</option>
-                </select>
+                <label>번역체</label>
+                <div class="slider-wrap">
+                    <input type="range" id="toneSlider" min="0" max="2" value="0">
+                    <div class="slider-labels">
+                        <span>구어체</span>
+                        <span>기본</span>
+                        <span>문어체</span>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
 
-    <!-- 작업 탭 분리 제어 장치 -->
-    <div class="tab-group">
-        <button id="tabFile" class="tab-btn active" onclick="switchMode('file')">파일 번역</button>
-        <button id="tabText" class="tab-btn" onclick="switchMode('text')">텍스트 직접 입력</button>
+    <div class="advanced-trigger" onclick="toggleAdvancedMenu()">⚙️ 고급 설정 (Advanced Settings) ▼</div>
+    <div id="advancedBox" class="advanced-box">
+        <div class="lang-select-group">
+            <div style="flex: 2;">
+                <label for="protectedWords">🚫 번역 제외 단어 (쉼표로 구분)</label>
+                <input type="text" id="protectedWords" placeholder="예: Gemini, 뉴존">
+            </div>
+            <div style="flex: 1;">
+                <label for="chunkSizeInput">📦 청크 크기</label>
+                <input type="number" id="chunkSizeInput" value="25" min="5" max="100">
+            </div>
+        </div>
     </div>
 
-    <!-- 파일 번역 뷰 -->
-    <div id="fileModeArea" class="file-mode-container">
-        <div id="dropZone" class="file-label">📂 자막 파일 열기</div>
-        <input type="file" id="srtFiles" accept=".srt,.smi,.txt" multiple>
+    <div class="main-workspace">
+        <div>
+            <div id="dropZone" class="file-label">📂 자막 파일 열기</div>
+            <input type="file" id="srtFiles" accept=".srt,.smi,.txt" multiple>
+        </div>
+        
         <div id="fileListContainer" class="file-list-container"></div>
-    </div>
-
-    <!-- [추가] 텍스트 번역 상자 뷰 -->
-    <div id="textModeArea" class="text-mode-container">
-        <div class="textarea-wrap">
-            <textarea id="textInput" placeholder="번역할 원문 내용을 여기에 붙여넣으세요..."></textarea>
-            <textarea id="textOutput" placeholder="번역된 결과가여기에 출력됩니다..." readonly></textarea>
+        
+        <div class="textarea-block">
+            <label for="textInput">텍스트 입력</label>
+            <textarea id="textInput" placeholder="직접 번역할 원문 내용을 적어주세요..."></textarea>
+        </div>
+        
+        <div class="textarea-block">
+            <label for="textOutput">번역 결과</label>
+            <textarea id="textOutput" placeholder="번역 완료 시 여기에 출력됩니다..." readonly></textarea>
+        </div>
+        
+        <div class="text-action-row">
+            <button type="button" id="downloadTextBtn" class="btn-mini-download" onclick="downloadDirectText()">💾 결과 텍스트 다운로드</button>
         </div>
     </div>
     
     <div class="btn-group">
-        <button id="startBtn" class="btn-start" onclick="handleStart()">번역 시작</button>
-        <button id="pauseBtn" class="btn-pause" onclick="pauseTranslation()">일시정지</button>
-        <button id="resumeBtn" class="btn-resume" onclick="resumeTranslation()">재시작</button>
-        <button id="stopBtn" class="btn-stop" onclick="stopTranslation()">중지</button>
+        <button id="startBtn" class="main-action btn-start" onclick="executeTranslationCore()">번역 시작</button>
+        <button id="pauseBtn" class="main-action btn-pause" onclick="pausePipeline()">일시정지</button>
+        <button id="resumeBtn" class="main-action btn-resume" onclick="resumePipeline()">재시작</button>
+        <button id="stopBtn" class="main-action btn-stop" onclick="stopPipeline()">중지</button>
     </div>
     
     <div id="progressContainer" class="progress-container">
-        <div class="progress-text">
+        <div class="progress-header">
             <span id="currentFileName">대기 중</span>
             <span id="progressPercent">0%</span>
         </div>
@@ -158,7 +183,7 @@
             <span id="etaMessage"></span>
         </div>
         
-        <button id="downloadAllBtn" class="btn-download-all" onclick="downloadAllFiles()">📦 번역 완료된 파일 모두 받기</button>
+        <button id="downloadAllBtn" class="main-action btn-download-all" onclick="downloadAllFilesStored()">📦 번역 완료된 파일 모두 받기</button>
     </div>
     
     <div id="errorLogBox" class="error-log-box">
@@ -175,44 +200,52 @@
     const resumeBtn = document.getElementById('resumeBtn');
     const stopBtn = document.getElementById('stopBtn');
     const downloadAllBtn = document.getElementById('downloadAllBtn');
+    const downloadTextBtn = document.getElementById('downloadTextBtn');
     const fileListContainer = document.getElementById('fileListContainer');
-    
     const errorLogBox = document.getElementById('errorLogBox');
     const errorTextarea = document.getElementById('errorTextarea');
 
-    let currentMode = 'file'; // 'file' or 'text'
+    const apiAddress = "http://localhost:1188/translate";
     let selectedFiles = [];
     let isPaused = false;
     let isStopped = false;
     let translatedStorage = [];
 
-    window.addEventListener('DOMContentLoaded', () => {
-        const savedSrc = localStorage.getItem('my_deepxl_src_lang');
-        if (savedSrc) document.getElementById('sourceLang').value = savedSrc;
-        const savedTgt = localStorage.getItem('my_deepxl_tgt_lang');
-        if (savedTgt) document.getElementById('targetLang').value = savedTgt;
-        const savedEngine = localStorage.getItem('my_trans_engine');
-        if (savedEngine) {
-            document.getElementById('engineSelect').value = savedEngine;
-            toggleToneDropdown();
+    function toggleAdvancedMenu() {
+        const box = document.getElementById('advancedBox');
+        const trigger = document.querySelector('.advanced-trigger');
+        if (box.style.display === 'block') {
+            box.style.display = 'none';
+            trigger.innerText = '⚙️ 고급 설정 (Advanced Settings) ▼';
+        } else {
+            box.style.display = 'block';
+            trigger.innerText = '⚙️ 고급 설정 (Advanced Settings) ▲';
         }
-    });
-
-    function toggleToneDropdown() {
-        const engine = document.getElementById('engineSelect').value;
-        document.getElementById('toneSelectWrap').style.display = engine === 'deepxl' ? 'block' : 'none';
-        localStorage.setItem('my_trans_engine', engine);
     }
 
-    // 작업 모드 체인저
-    function switchMode(mode) {
-        currentMode = mode;
-        document.getElementById('tabFile').classList.toggle('active', mode === 'file');
-        document.getElementById('tabText').classList.toggle('active', mode === 'text');
-        document.getElementById('fileModeArea').style.display = mode === 'file' ? 'block' : 'none';
-        document.getElementById('textModeArea').style.display = mode === 'text' ? 'block' : 'none';
-        document.getElementById('progressContainer').style.display = 'none';
-        errorLogBox.style.display = 'none';
+    window.addEventListener('DOMContentLoaded', () => {
+        document.getElementById('sourceLang').value = "auto";
+        document.getElementById('targetLang').value = "ko";
+        
+        const savedEngine = localStorage.getItem('my_trans_engine');
+        if (savedEngine) {
+            const radio = document.querySelector(`input[name="engineRadio"][value="${savedEngine}"]`);
+            if (radio) radio.checked = true;
+        }
+        toggleEngineRoute();
+
+        const savedWords = localStorage.getItem('my_protected_words');
+        if (savedWords) document.getElementById('protectedWords').value = savedWords;
+        const savedChunk = localStorage.getItem('my_chunk_size');
+        if (savedChunk) document.getElementById('chunkSizeInput').value = savedChunk;
+        const savedSlider = localStorage.getItem('my_tone_slider_val');
+        if (savedSlider) document.getElementById('toneSlider').value = savedSlider;
+    });
+
+    function toggleEngineRoute() {
+        const engine = document.querySelector('input[name="engineRadio"]:checked').value;
+        document.getElementById('toneSelectWrap').style.display = engine === 'deepxl' ? 'block' : 'none';
+        localStorage.setItem('my_trans_engine', engine);
     }
 
     dropZone.addEventListener('click', () => fileInput.click());
@@ -244,9 +277,9 @@
         errorLogBox.style.display = 'none';
     }
 
-    function pauseTranslation() { isPaused = true; pauseBtn.style.display = 'none'; resumeBtn.style.display = 'block'; document.getElementById('statusMessage').innerText = `⏸️ 일시정지됨`; }
-    function resumeTranslation() { isPaused = false; resumeBtn.style.display = 'none'; pauseBtn.style.display = 'block'; }
-    function stopTranslation() { isStopped = true; isPaused = false; hideControlButtons(); document.getElementById('statusMessage').innerText = `🛑 중지됨`; }
+    function pausePipeline() { isPaused = true; pauseBtn.style.display = 'none'; resumeBtn.style.display = 'block'; }
+    function resumePipeline() { isPaused = false; resumeBtn.style.display = 'none'; pauseBtn.style.display = 'block'; }
+    function stopPipeline() { isStopped = true; isPaused = false; hideControlButtons(); }
     function showControlButtons() { startBtn.style.display = 'none'; pauseBtn.style.display = 'block'; stopBtn.style.display = 'block'; }
     function hideControlButtons() { startBtn.style.display = 'block'; pauseBtn.style.display = 'none'; resumeBtn.style.display = 'none'; stopBtn.style.display = 'none'; }
 
@@ -262,27 +295,53 @@
         if (item) triggerDownload(item.name, item.content);
     }
 
-    function downloadAllFiles() {
+    function downloadAllFilesStored() {
         translatedStorage.forEach(item => triggerDownload(item.name, item.content));
     }
 
-    // [통합 통신 코어] 동적 엔진 분기식 번역 처리기
+    function downloadDirectText() {
+        const outText = document.getElementById('textOutput').value;
+        if (outText) triggerDownload('translated_text.txt', outText);
+    }
+
+    function protectAndTranslate(textBlock, sourceLang, targetLang, toneStyle, engine, words) {
+        let textData = textBlock;
+        const placeholders = [];
+
+        words.forEach((word, idx) => {
+            if(!word) return;
+            const regex = new RegExp(escapeRegExp(word), 'gi');
+            textData = textData.replace(regex, (match) => {
+                placeholders.push({ token: `UNTRANSLATABLETOKEN${idx}`, original: match });
+                return `UNTRANSLATABLETOKEN${idx}`;
+            });
+        });
+
+        return requestTranslation(textData, sourceLang, targetLang, toneStyle, engine).then(translated => {
+            let finalOutput = translated;
+            placeholders.forEach(p => {
+                finalOutput = finalOutput.replace(new RegExp(p.token, 'g'), p.original);
+            });
+            return finalOutput;
+        });
+    }
+
+    function escapeRegExp(string) {
+        return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    }
+
     async function requestTranslation(textBlock, sourceLang, targetLang, toneStyle, engine) {
         if (engine === 'google_free') {
-            // 구글 정식 오픈용 웹 서비스 통신 우회 가속 주소 활용
             const sl = sourceLang === 'auto' ? 'auto' : sourceLang.toLowerCase();
             const tl = targetLang.toLowerCase();
             const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=${sl}&tl=${tl}&dt=t&q=${encodeURIComponent(textBlock)}`;
             
             const res = await fetch(url);
-            if (!res.ok) throw new Error(`Google API 통신 실패 (코드: ${res.status})`);
+            if (!res.ok) throw new Error(`Google API 통신 실패 (${res.status})`);
             const data = await res.json();
-            
-            // 다중 행으로 쪼개져 돌아온 가공 원본 데이터 병합 세척
             return data[0].map(x => x[0]).join('');
         } else {
-            // 기존 DeepXL 로컬 서비스 연동
-            const res = await fetch("http://localhost:1188/translate", {
+            const res = await fetch(apiAddress, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -298,49 +357,54 @@
         }
     }
 
-    function handleStart() {
-        if (currentMode === 'file') startFileTranslation();
-        else startTextTranslation();
+    function executeTranslationCore() {
+        document.getElementById('sourceLang').value = "auto";
+        document.getElementById('targetLang').value = "ko";
+        
+        const textVal = document.getElementById('textInput').value.trim();
+        if (textVal) startTextModeTranslation(textVal);
+        if (selectedFiles.length > 0) startFileModeTranslation();
+        if (!textVal && selectedFiles.length === 0) alert('번역할 텍스트를 적거나 자막 파일을 올려주세요!');
     }
 
-    // 2. 텍스트 상자 전용 번역 작동 로직
-    async function startTextTranslation() {
-        const textInput = document.getElementById('textInput').value.trim();
-        if (!textInput) return alert('번역할 텍스트를 입력해 주세요!');
-        
-        const sourceLang = document.getElementById('sourceLang').value;
-        const targetLang = document.getElementById('targetLang').value;
-        const toneStyle = document.getElementById('toneSelect').value;
-        const engine = document.getElementById('engineSelect').value;
+    async function startTextModeTranslation(textInput) {
+        const sourceLang = "auto";
+        const targetLang = "ko";
+        const engine = document.querySelector('input[name="engineRadio"]:checked').value;
+        const sliderVal = document.getElementById('toneSlider').value;
+        const toneStyle = sliderVal === "0" ? "less" : (sliderVal === "2" ? "more" : "default");
+        const protectedWords = document.getElementById('protectedWords').value.split(',').map(w => w.trim());
 
         startBtn.disabled = true;
-        startBtn.innerText = "번역 중...";
+        downloadTextBtn.style.display = 'none';
         errorLogBox.style.display = 'none';
 
         try {
-            const result = await requestTranslation(textInput, sourceLang, targetLang, toneStyle, engine);
+            const result = await protectAndTranslate(textInput, sourceLang, targetLang, toneStyle, engine, protectedWords);
             document.getElementById('textOutput').value = result;
+            downloadTextBtn.style.display = 'inline-block';
         } catch(e) {
             console.error(e);
-            errorTextarea.value = `[번역 오류]\n사유: ${e.message}`;
+            errorTextarea.value = `[텍스트 번역 에러]\n사유: ${e.message}`;
             errorLogBox.style.display = 'block';
         } finally {
             startBtn.disabled = false;
-            startBtn.innerText = "번역 시작";
         }
     }
 
-    // 1. 기존 파일 자막 대량 번역 작동 로직
-    async function startFileTranslation() {
-        if (selectedFiles.length === 0) return alert('자막 파일을 선택해 주세요!');
+    async function startFileModeTranslation() {
+        const sourceLang = "auto";
+        const targetLang = "ko";
+        const engine = document.querySelector('input[name="engineRadio"]:checked').value;
+        const sliderVal = document.getElementById('toneSlider').value;
+        const toneStyle = sliderVal === "0" ? "less" : (sliderVal === "2" ? "more" : "default");
         
-        const sourceLang = document.getElementById('sourceLang').value;
-        const targetLang = document.getElementById('targetLang').value;
-        const toneStyle = document.getElementById('toneSelect').value;
-        const engine = document.getElementById('engineSelect').value;
+        const protectedWords = document.getElementById('protectedWords').value.split(',').map(w => w.trim());
+        const chunkSize = parseInt(document.getElementById('chunkSizeInput').value) || 25;
         
-        localStorage.setItem('my_deepxl_src_lang', sourceLang);
-        localStorage.setItem('my_deepxl_tgt_lang', targetLang);
+        localStorage.setItem('my_protected_words', document.getElementById('protectedWords').value);
+        localStorage.setItem('my_chunk_size', chunkSize);
+        localStorage.setItem('my_tone_slider_val', sliderVal);
         
         isStopped = false; isPaused = false;
         showControlButtons();
@@ -357,7 +421,7 @@
             if (isStopped) break;
             
             const currentFile = selectedFiles[i];
-            document.getElementById('currentFileName').innerText = `[${i + 1}/${selectedFiles.length}] ${currentFile.name}`;
+            document.getElementById('currentFileName').innerText = currentFile.name;
             
             const statusLabel = document.getElementById(`fileStatus_${i}`);
             if (statusLabel) { statusLabel.innerText = "번역 중..."; statusLabel.style.color = "#dd6b20"; }
@@ -379,7 +443,6 @@
 
             let totalTasks = textTasks.length;
             let startTime = Date.now();
-            const chunkSize = 25; 
 
             for (let j = 0; j < totalTasks; j += chunkSize) {
                 if (isStopped) break;
@@ -390,7 +453,7 @@
                 const textToTranslate = chunk.map(t => t.text).join('\n');
 
                 try {
-                    const rawTranslatedText = await requestTranslation(textToTranslate, sourceLang, targetLang, toneStyle, engine);
+                    const rawTranslatedText = await protectAndTranslate(textToTranslate, sourceLang, targetLang, toneStyle, engine, protectedWords);
                     const translatedLines = rawTranslatedText.split('\n').map(l => l.trim());
 
                     if (translatedLines.length === chunk.length) {
@@ -398,16 +461,15 @@
                             currentTranslatedLines[chunk[k].index] = translatedLines[k];
                         }
                     } else {
-                        // 일대일 라인 붕괴 예방용 미세 구조 피드백 매핑
                         for (let k = 0; k < chunk.length; k++) {
-                            const singleText = await requestTranslation(chunk[k].text, sourceLang, targetLang, toneStyle, engine);
+                            const singleText = await protectAndTranslate(chunk[k].text, sourceLang, targetLang, toneStyle, engine, protectedWords);
                             currentTranslatedLines[chunk[k].index] = singleText;
                         }
                     }
 
                 } catch (e) {
                     console.error(e);
-                    errorTextarea.value = `[오류 알림]\n엔진 상태 및 연결을 점검해 주세요.\n상세 사유: ${e.message}`;
+                    errorTextarea.value = `[파일 번역 에러]\n사유: ${e.message}`;
                     errorLogBox.style.display = 'block';
                     if (statusLabel) { statusLabel.innerText = "실패"; statusLabel.style.color = "#e53e3e"; }
                     stopTranslation();
@@ -434,7 +496,7 @@
                 const extMatch = currentFile.name.match(/\.([a-z0-9]+)$/i);
                 const ext = extMatch ? extMatch[1] : 'srt';
                 const baseName = currentFile.name.replace(/\.[^/.]+$/, "");
-                const targetFileName = `${baseName}_translated.${ext}`;
+                const targetFileName = `${baseName}_ko.${ext}`;
                 
                 translatedStorage.push({ index: i, name: targetFileName, content: currentTranslatedLines.join('\n') });
                 if (statusLabel) statusLabel.innerHTML = `<button class="btn-mini-download" onclick="document.downloadSingleFile(${i})">다운로드</button>`;
@@ -444,7 +506,7 @@
         hideControlButtons();
         etaMessage.innerText = '';
         if (!isStopped && errorLogBox.style.display !== 'block') {
-            statusMessage.innerText = '🎉 모든 파일 번역 완료!';
+            statusMessage.innerText = '🎉 완료!';
             if (selectedFiles.length > 1) downloadAllBtn.style.display = 'block';
         }
     }
