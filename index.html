@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI 자막 번역기</title>
+    <style>
+        body { font-family: 'Malgun Gothic', sans-serif; background-color: #f3f0ff; margin: 0; padding: 40px; display: flex; justify-content: center; align-items: center; min-height: 90vh; }
+        .container { background: white; padding: 40px; border-radius: 16px; box-shadow: 0 10px 25px rgba(107, 70, 193, 0.1); width: 100%; max-width: 520px; text-align: center; position: relative; }
+        
+        .status-badge { position: absolute; top: 20px; right: 20px; padding: 6px 12px; border-radius: 20px; font-size: 12px; font-weight: bold; display: flex; align-items: center; gap: 6px; }
+        .status-online { background-color: #e6fffa; color: #319795; }
+        .status-offline { background-color: #fff5f5; color: #e53e3e; }
+        
+        h1 { color: #6b46c1; margin-top: 20px; margin-bottom: 10px; font-size: 28px; }
+        p { color: #718096; margin-bottom: 30px; font-size: 14px; }
+        input[type="file"] { display: none; }
+        
+        .file-label { display: block; background: #f7fafc; border: 2px dashed #b794f4; padding: 40px 20px; border-radius: 12px; cursor: pointer; margin-bottom: 25px; color: #4a5568; font-weight: bold; transition: all 0.2s; }
+        .file-label.dragover { background: #e8dff5; border-color: #6b46c1; transform: scale(1.02); }
+        
+        .btn-group { display: flex; gap: 10px; margin-bottom: 15px; }
+        button { color: white; border: none; padding: 15px 20px; border-radius: 8px; font-size: 15px; font-weight: bold; cursor: pointer; flex: 1; transition: background 0.2s; }
+        
+        .btn-start { background: #6b46c1; } .btn-start:hover { background: #553c9a; }
+        .btn-pause { background: #dd6b20; display: none; } .btn-pause:hover { background: #c05621; }
+        .btn-resume { background: #3182ce; display: none; } .btn-resume:hover { background: #2b6cb0; }
+        .btn-stop { background: #e53e3e; display: none; } .btn-stop:hover { background: #9b2c2c; }
+        
+        .btn-retry { background: #38a169; display: none; width: 100%; margin-top: 20px; padding: 15px; } 
+        .btn-retry:hover { background: #2f855a; }
+        button:disabled { background: #cbd5e0 !important; cursor: not-allowed; }
+        
+        .progress-container { margin-top: 25px; display: none; text-align: left; }
+        .progress-text { font-size: 14px; color: #4a5568; font-weight: bold; margin-bottom: 8px; display: flex; justify-content: space-between; }
+        progress { width: 100%; height: 12px; border-radius: 6px; appearance: none; margin-bottom: 10px; }
+        progress::-webkit-progress-bar { background-color: #edf2f7; border-radius: 6px; }
+        progress::-webkit-progress-value { background-color: #6b46c1; border-radius: 6px; }
+        
+        #statusMessage { font-size: 13px; color: #4a5568; font-weight: bold; line-height: 1.5; }
+        #etaMessage { font-size: 13px; color: #dd6b20; font-weight: bold; text-align: right; margin-top: -18px; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div id="serverBadge" class="status-badge status-offline">🔴 연결 확인 중</div>
+
+    <h1>AI 자막 번역기</h1>
+    <p>SRT 자막 파일을 자동으로 번역합니다.</p>
+    
+    <div id="dropZone" class="file-label">
+        📂 SRT 파일을 여기에 떨어뜨리거나 클릭하세요
+    </div>
+    <input type="file" id="srtFiles" accept=".srt" multiple>
+    
+    <div id="fileCount" style="margin-bottom: 25px; font-weight: bold; color: #6b46c1;">선택된 파일 없음</div>
+    
+    <div class="btn-group">
+        <button id="startBtn" class="btn-start" onclick="startTranslation()" disabled>번역 시작</button>
+        <button id="pauseBtn" class="btn-pause" onclick="pauseTranslation()">일시정지</button>
+        <button id="resumeBtn" class="btn-resume" onclick="resumeTranslation()">재시작</button>
+        <button id="stopBtn" class="btn-stop" onclick="stopTranslation()">중지</button>
+    </div>
+    
+    <div id="progressContainer" class="progress-container">
+        <div class="progress-text">
+            <span id="currentFileName">대기 중</span>
+            <span id="progressPercent">0%</span>
+        </div>
+        <progress id="progressBar" value="0" max="100"></progress>
+        <div id="statusMessage"></div>
+        <div id="etaMessage"></div>
+        
+        <button id="retryBtn" class="btn-retry" onclick="retryErrorLines()">⚠️ 오류 문장 재시도</button>
+    </div>
+</div>
+
+<script>
+    const fileInput = document.getElementById('srtFiles');
+    const dropZone = document.getElementById('dropZone');
+    
+    const startBtn = document.getElementById('startBtn');
+    const pauseBtn = document.getElementById('pauseBtn');
+    const resumeBtn = document.getElementById('resumeBtn');
+    const stopBtn = document.getElementById('stopBtn');
+    const retryBtn = document.getElementById('retryBtn');
+
+    let selectedFiles = [];
+    let isPaused = false;
+    let isStopped = false;
+    
+    let currentFile = null;
+    let currentLines = [];
+    let currentTranslatedLines = [];
+    let errorIndices = []; 
+
+    async function checkServerStatus() {
+        const badge = document.getElementById('serverBadge');
+        try {
+            await fetch('http://127.0.0.1:1188/translate', { method: 'GET', mode: 'no-cors' });
+            badge.className = "status-badge status-online";
+            badge.innerHTML = "🟢 연결됨";
+            if (selectedFiles.length > 0 && startBtn.style.display !== 'none') startBtn.disabled = false;
+        } catch (error) {
+            badge.className = "status-badge status-offline";
+            badge.innerHTML = "🔴 연결 안 됨";
+            startBtn.disabled = true;
+        }
+    }
+    setInterval(checkServerStatus, 3000);
+    checkServerStatus();
+
+    dropZone.addEventListener('click', () => fileInput.click());
+    fileInput.addEventListener('change', (e) => handleFiles(e.target.files));
+    dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('dragover'); });
+    dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
+    dropZone.addEventListener('drop', (e) => {
+        e.preventDefault(); dropZone.classList.remove('dragover');
+        handleFiles(Array.from(e.dataTransfer.files).filter(f => f.name.endsWith('.srt')));
+    });
+
+    function handleFiles(files) {
+        selectedFiles = Array.from(files);
+        document.getElementById('fileCount').innerText = `선택된 파일: ${selectedFiles.length}개`;
+        if (document.getElementById('serverBadge').classList.contains('status-online')) startBtn.disabled = false;
+        retryBtn.style.display = 'none';
+    }
+
+    function pauseTranslation() { isPaused = true; pauseBtn.style.display = 'none'; resumeBtn.style.display = 'block'; document.getElementById('statusMessage').innerText = `⏸️ 일시정지됨`; }
+    function resumeTranslation() { isPaused = false; resumeBtn.style.display = 'none'; pauseBtn.style.display = 'block'; }
+    function stopTranslation() { isStopped = true; isPaused = false; hideControlButtons(); document.getElementById('statusMessage').innerText = `🛑 중지됨`; }
+    function showControlButtons() { startBtn.style.display = 'none'; pauseBtn.style.display = 'block'; stopBtn.style.display = 'block'; }
+    function hideControlButtons() { startBtn.style.display = 'block'; pauseBtn.style.display = 'none'; resumeBtn.style.display = 'none'; stopBtn.style.display = 'none'; fileInput.disabled = false; }
+
+    function triggerDownload(fileName, content) {
+        const blob = new Blob([content], { type: 'text/srt' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a'); a.href = url; a.download = fileName;
+        document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url);
+    }
+
+    async function startTranslation() {
+        if (selectedFiles.length === 0) return;
+        
+        isStopped = false;
+        isPaused = false;
+        errorIndices = [];
+        fileInput.disabled = true;
+        showControlButtons();
+        retryBtn.style.display = 'none';
+        
+        document.getElementById('progressContainer').style.display = 'block';
+        const progressBar = document.getElementById('progressBar');
+        const progressPercent = document.getElementById('progressPercent');
+        const statusMessage = document.getElementById('statusMessage');
+        const etaMessage = document.getElementById('etaMessage');
+
+        for (let i = 0; i < selectedFiles.length; i++) {
+            if (isStopped) break;
+            
+            currentFile = selectedFiles[i];
+            document.getElementById('currentFileName').innerText = `[${i + 1}/${selectedFiles.length}] ${currentFile.name}`;
+            
+            const text = await currentFile.text();
+            currentLines = text.split(/\r?\n/);
+            currentTranslatedLines = [...currentLines];
+            
+            const textTasks = [];
+            for (let j = 0; j < currentLines.length; j++) {
+                const line = currentLines[j].trim();
+                if (line && !/^\d+$/.test(line) && !line.includes('-->')) {
+                    textTasks.push({ index: j, text: line });
+                }
+            }
+
+            let totalTasks = textTasks.length;
+            let startTime = Date.now();
+            const batchSize = 10; 
+
+            for (let j = 0; j < totalTasks; j += batchSize) {
+                if (isStopped) break;
+                while (isPaused) { if (isStopped) break; await new Promise(res => setTimeout(res, 200)); }
+                if (isStopped) break;
+
+                const batch = textTasks.slice(j, j + batchSize);
+                
+                const promises = batch.map(async (task) => {
+                    try {
+                        const res = await fetch('http://127.0.0.1:1188/translate', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ text: task.text, source_lang: 'AUTO', target_lang: 'KO' })
+                        });
+                        const data = await res.json();
+                        if (data.code === 200) {
+                            currentTranslatedLines[task.index] = data.data.trim();
+                        } else {
+                            throw new Error();
+                        }
+                    } catch (e) {
+                        errorIndices.push(task.index); 
+                    }
+                });
+
+                await Promise.all(promises); 
+
+                let currentProgress = Math.min(j + batchSize, totalTasks);
+                let currentPercent = Math.floor((currentProgress / totalTasks) * 100);
+                progressBar.value = currentPercent;
+                progressPercent.innerText = `${currentPercent}%`;
+                statusMessage.innerText = `${currentProgress} / ${totalTasks} 줄 완료 (오류: ${errorIndices.length})`;
+
+                if (j > 0 && !isPaused) {
+                    const elapsedTime = (Date.now() - startTime) / 1000;
+                    const remainingTime = Math.round((elapsedTime / currentProgress) * (totalTasks - currentProgress));
+                    const mins = Math.floor(remainingTime / 60); const secs = remainingTime % 60;
+                    etaMessage.innerText = mins > 0 ? `남은 시간: 약 ${mins}분 ${secs}초` : `남은 시간: 약 ${secs}초`;
+                }
+                
+                await new Promise(res => setTimeout(res, 50));
+            }
+
+            if (!isStopped) {
+                triggerDownload(currentFile.name.replace('.srt', '_ko.srt'), currentTranslatedLines.join('\n'));
+            }
+        }
+
+        hideControlButtons();
+        etaMessage.innerText = '';
+        
+        if (errorIndices.length > 0 && !isStopped) {
+            statusMessage.innerText = `⚠️ 통신 오류로 인해 ${errorIndices.length}개 문장이 원문으로 대체되었습니다.`;
+            retryBtn.style.display = 'block'; 
+        } else if (!isStopped) {
+            statusMessage.innerText = '🎉 번역 완료!';
+        }
+    }
+
+    async function retryErrorLines() {
+        if (errorIndices.length === 0) return;
+        retryBtn.disabled = true; isStopped = false; isPaused = false; showControlButtons();
+        const progressBar = document.getElementById('progressBar');
+        const progressPercent = document.getElementById('progressPercent');
+        const statusMessage = document.getElementById('statusMessage');
+        
+        let targetErrors = [...errorIndices]; errorIndices = []; 
+        let totalErrors = targetErrors.length;
+        document.getElementById('currentFileName').innerText = `🔄 [오류 복구] ${currentFile.name}`;
+
+        for (let k = 0; k < totalErrors; k++) {
+            if (isStopped) break;
+            while (isPaused) { if (isStopped) break; await new Promise(res => setTimeout(res, 200)); }
+            if (isStopped) break;
+
+            let idx = targetErrors[k]; let line = currentLines[idx].trim();
+            statusMessage.innerText = `오류 수정 중: ${k + 1} / ${totalErrors}`;
+
+            try {
+                const res = await fetch('http://127.0.0.1:1188/translate', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ text: line, source_lang: 'AUTO', target_lang: 'KO' })
+                });
+                const data = await res.json();
+                if (data.code === 200) currentTranslatedLines[idx] = data.data;
+                else throw new Error();
+            } catch (e) { errorIndices.push(idx); }
+            
+            let currentPercent = Math.floor(((k + 1) / totalErrors) * 100);
+            progressBar.value = currentPercent; progressPercent.innerText = `${currentPercent}%`;
+            await new Promise(res => setTimeout(res, 60));
+        }
+
+        hideControlButtons(); retryBtn.disabled = false;
+        triggerDownload(currentFile.name.replace('.srt', '_ko_fixed.srt'), currentTranslatedLines.join('\n'));
+
+        if (errorIndices.length > 0) {
+            statusMessage.innerText = `⚠️ 복구 실패 항목 존재. 남은 오류: ${errorIndices.length}개`;
+            retryBtn.style.display = 'block';
+        } else {
+            statusMessage.innerText = '🎉 모든 오류 복구 완료!';
+            retryBtn.style.display = 'none';
+        }
+    }
+</script>
+</body>
+</html>
