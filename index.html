@@ -56,11 +56,11 @@
         <label>🔑 Gemini API</label>
         <input type="password" id="apiKey" placeholder="AI Studio에서 발급받은 키를 붙여넣으세요">
         
-        <!-- [업데이트] 현시점 무료 정식 라인업 반영 완료 -->
+        <!-- [핵심 변경] 사용 가능한 gemini-1.5-flash를 무조건 첫 번째 기본값으로 지정 -->
         <label>🤖 AI 모델명</label>
         <div class="radio-group">
-            <label><input type="radio" name="modelRadio" value="gemini-2.0-flash" checked> gemini-2.0-flash (추천 - 고성능 초고속 무료)</label>
-            <label><input type="radio" name="modelRadio" value="gemini-1.5-flash"> gemini-1.5-flash (구형 호환용 무료)</label>
+            <label><input type="radio" name="modelRadio" value="gemini-1.5-flash" checked> gemini-1.5-flash (무료 한도 안정적 - 추천)</label>
+            <label><input type="radio" name="modelRadio" value="gemini-2.0-flash"> gemini-2.0-flash (일부 계정 제한 있음)</label>
         </div>
         
         <label>🗣️ 번역체</label>
@@ -129,6 +129,8 @@
         if (savedModel) {
             const modelRadio = document.querySelector(`input[name="modelRadio"][value="${savedModel}"]`);
             if (modelRadio) modelRadio.checked = true;
+        } else {
+            document.querySelector('input[name="modelRadio"][value="gemini-1.5-flash"]').checked = true;
         }
         
         const savedTone = localStorage.getItem('my_gemini_tone_radio');
@@ -213,7 +215,9 @@
 
             let totalTasks = textTasks.length;
             let startTime = Date.now();
-            let chunkSize = 50; 
+            
+            // [안정성 밸런스 조정] 토큰 버스트 한도를 자극하지 않는 가장 이상적인 30줄 청크 사이즈
+            let chunkSize = 30; 
 
             for (let j = 0; j < totalTasks; j += chunkSize) {
                 if (isStopped) break;
@@ -235,7 +239,6 @@
 ${formattedLines}`;
 
                 try {
-                    // [대수술] 주소를 정식 운영 라인인 v1 엔드포인트로 전격 변경
                     const res = await fetch(`https://generativelanguage.googleapis.com/v1/models/${modelName}:generateContent?key=${apiKey}`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
@@ -246,11 +249,11 @@ ${formattedLines}`;
                     
                     if (data.error && data.error.code === 429) {
                         etaMessage.innerText = "";
-                        chunkSize = Math.max(15, Math.floor(chunkSize / 2));
+                        chunkSize = Math.max(10, Math.floor(chunkSize / 1.5));
                         
-                        for (let countdown = 15; countdown > 0; countdown--) {
+                        for (let countdown = 20; countdown > 0; countdown--) {
                             if (isStopped) break;
-                            statusMessage.innerText = `⚠️ 한도 도달! 덩치를 ${chunkSize}줄로 줄여 ${countdown}초 뒤 자동 재시도합니다...`;
+                            statusMessage.innerText = `⚠️ 무료 트래픽 한도 도달! 안정적인 복구를 위해 ${countdown}초 후 자동 재시도합니다...`;
                             await new Promise(res => setTimeout(res, 1000));
                         }
                         j -= chunk.length; 
@@ -285,7 +288,7 @@ ${formattedLines}`;
                 let currentPercent = Math.floor((currentProgress / totalTasks) * 100);
                 progressBar.value = currentPercent;
                 progressPercent.innerText = `${currentPercent}%`;
-                statusMessage.innerText = `${currentProgress} / ${totalTasks} 줄 완료 (현재 묶음: ${chunkSize}줄)`;
+                statusMessage.innerText = `${currentProgress} / ${totalTasks} 줄 완료`;
 
                 if (j > 0 && !isPaused) {
                     const elapsedTime = (Date.now() - startTime) / 1000;
@@ -294,6 +297,7 @@ ${formattedLines}`;
                     etaMessage.innerText = mins > 0 ? `남은 시간: 약 ${mins}분 ${secs}초` : `남은 시간: 약 ${secs}초`;
                 }
                 
+                // 가벼워진 청크에 맞춘 고속 패스 지연 (0.6초)
                 await new Promise(res => setTimeout(res, 600));
             }
 
