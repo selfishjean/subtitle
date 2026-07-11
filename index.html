@@ -3,23 +3,18 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI 자막 번역기</title>
+    <title>AI 자막 번역기 (DeepXL)</title>
     <style>
         body { font-family: 'Malgun Gothic', sans-serif; background-color: #f3f0ff; margin: 0; padding: 40px; display: flex; justify-content: center; align-items: center; min-height: 90vh; }
-        .container { background: white; padding: 40px; border-radius: 16px; box-shadow: 0 10px 25px rgba(107, 70, 193, 0.1); width: 100%; max-width: 540px; text-align: center; }
+        .container { background: white; padding: 40px; border-radius: 16px; box-shadow: 0 10px 25px rgba(107, 70, 193, 0.1); width: 100%; max-width: 500px; text-align: center; }
         
         h1 { color: #6b46c1; margin-bottom: 10px; font-size: 28px; }
         p { color: #718096; margin-bottom: 25px; font-size: 14px; }
-        input[type="file"] { display: none; }
+        input[type="text"] { display: none; }
         
         .config-box { background: #f7fafc; padding: 20px; border-radius: 8px; margin-bottom: 20px; text-align: left; border: 1px solid #e2e8f0; }
-        .config-box label { font-size: 13px; font-weight: bold; color: #4a5568; display: block; margin-bottom: 8px; margin-top: 14px; }
-        .config-box label:first-child { margin-top: 0; }
-        .config-box input[type="password"], .config-box input[type="text"] { width: 93%; padding: 8px; border: 1px solid #cbd5e0; border-radius: 4px; font-size: 13px; margin-bottom: 5px; }
-        
-        .radio-group { display: flex; flex-direction: column; gap: 8px; background: white; padding: 10px; border-radius: 6px; border: 1px solid #edf2f7; margin-bottom: 5px; }
-        .radio-group label { display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: normal; color: #4a5568; margin: 0; cursor: pointer; }
-        .radio-group input[type="radio"] { margin: 0; width: auto; cursor: pointer; }
+        .config-box label { font-size: 13px; font-weight: bold; color: #4a5568; display: block; margin-bottom: 8px; }
+        .config-box input[type="text"] { width: 93%; padding: 8px; border: 1px solid #cbd5e0; border-radius: 4px; font-size: 13px; display: block; }
 
         .file-label { display: block; background: #f7fafc; border: 2px dashed #b794f4; padding: 40px 20px; border-radius: 12px; cursor: pointer; margin-bottom: 25px; color: #4a5568; font-weight: bold; transition: all 0.2s; }
         .file-label.dragover { background: #e8dff5; border-color: #6b46c1; transform: scale(1.02); }
@@ -43,50 +38,24 @@
         
         .error-log-box { display: none; margin-top: 20px; padding: 15px; background-color: #fff5f5; border: 1px solid #fed7d7; border-radius: 8px; text-align: left; }
         .error-log-box h4 { margin: 0 0 8px 0; color: #c53030; font-size: 14px; }
-        .error-log-box textarea { width: 95%; height: 120px; font-family: monospace; font-size: 12px; color: #9b2c2c; background: #fff; border: 1px solid #feb2b2; border-radius: 4px; padding: 8px; resize: none; }
+        .error-log-box textarea { width: 95%; height: 100px; font-family: monospace; font-size: 12px; color: #9b2c2c; background: #fff; border: 1px solid #feb2b2; border-radius: 4px; padding: 8px; resize: none; }
     </style>
 </head>
 <body>
 
 <div class="container">
     <h1>AI 자막 번역기</h1>
-    <p>대량의 SRT 파일을 오류 없이 자연스럽게 번역합니다.</p>
+    <p>DeepXL의 문맥 예측 엔진을 이용해 자연스럽게 번역합니다.</p>
     
     <div class="config-box">
-        <!-- 요청하신 완벽한 심플 UI 명칭 적용 -->
-        <label>🔑 Gemini API</label>
-        <input type="password" id="apiKey" placeholder="AI Studio에서 발급받은 키를 붙여넣으세요">
-        
-        <!-- [초정밀 보완] 404 원천 차단용 API 버전 스위치 라디오 추가 -->
-        <label>🌐 API 주소 버전 (404 에러 발생 시 변경해보세요)</label>
-        <div class="radio-group">
-            <label><input type="radio" name="apiVersionRadio" value="v1beta" checked> v1beta (추천 - 호환성 가장 높음)</label>
-            <label><input type="radio" name="apiVersionRadio" value="v1"> v1 (정식 안정화 버전)</label>
-        </div>
-        
-        <!-- 요청하신 무료 가용 모델 라디오 버튼화 완료 -->
-        <label>🤖 AI 모델명</label>
-        <div class="radio-group">
-            <label><input type="radio" name="modelRadio" value="gemini-1.5-flash" checked onclick="toggleCustomModel(false)"> gemini-1.5-flash (무료 티어 표준)</label>
-            <label><input type="radio" name="modelRadio" value="gemini-1.5-flash-latest" onclick="toggleCustomModel(false)"> gemini-1.5-flash-latest (최신 빌드)</label>
-            <label><input type="radio" name="modelRadio" value="gemini-2.0-flash" onclick="toggleCustomModel(false)"> gemini-2.0-flash (고성능 차세대 무료)</label>
-            <label><input type="radio" name="modelRadio" value="custom" onclick="toggleCustomModel(true)"> ✏️ 직접 이름 입력하기</label>
-        </div>
-        <input type="text" id="customModelInput" style="display:none; margin-top:5px;" placeholder="예: gemini-1.5-pro">
-        
-        <!-- 요청하신 번역체 명칭 및 라디오 버튼화 완료 -->
-        <label>🗣️ 번역체</label>
-        <div class="radio-group">
-            <label><input type="radio" name="toneRadio" value="해요체 (~해요, ~했습니다 같은 친근한 존댓말)" checked> 친근한 존댓말 (~해요)</label>
-            <label><input type="radio" name="toneRadio" value="하십시오체 (~합니다, ~정의합니다 같은 격식있는 존댓말)"> 격식있는 존댓말 (~합니다)</label>
-            <label><input type="radio" name="toneRadio" value="해라체 (~다, ~자 같은 친근한 반말)"> 친근한 반말 (~어/다)</label>
-        </div>
+        <label>🔑 DeepXL 주소</label>
+        <input type="text" id="apiAddress" value="http://localhost:1188/translate" placeholder="http://localhost:1188/translate">
     </div>
 
     <div id="dropZone" class="file-label">
         📂 SRT 파일을 여기에 떨어뜨리거나 클릭하세요
     </div>
-    <input type="file" id="srtFiles" accept=".srt" multiple>
+    <input type="file" id="srtFiles" accept=".srt" multiple style="display:none;">
     
     <div id="fileCount" style="margin-bottom: 25px; font-weight: bold; color: #6b46c1;">선택된 파일 없음</div>
     
@@ -108,8 +77,7 @@
     </div>
     
     <div id="errorLogBox" class="error-log-box">
-        <h4>⚠️ 에러가 발생하여 번역이 중단되었습니다.</h4>
-        <p style="font-size:11px; color:#718096; margin:0 0 8px 0;">아래 텍스트 상자의 에러 로그를 복사(Ctrl+C)해서 전달해 주세요.</p>
+        <h4>⚠️ 오류가 발생했습니다.</h4>
         <textarea id="errorTextarea" readonly onclick="this.select()"></textarea>
     </div>
 </div>
@@ -133,38 +101,9 @@
     let currentLines = [];
     let currentTranslatedLines = [];
 
-    function toggleCustomModel(show) {
-        document.getElementById('customModelInput').style.display = show ? 'block' : 'none';
-    }
-
-    // 로컬스토리지 완벽 복구 시스템
     window.addEventListener('DOMContentLoaded', () => {
-        const savedKey = localStorage.getItem('my_gemini_api_key');
-        if (savedKey) document.getElementById('apiKey').value = savedKey;
-        
-        const savedVer = localStorage.getItem('my_gemini_api_version');
-        if (savedVer) {
-            const verRadio = document.querySelector(`input[name="apiVersionRadio"][value="${savedVer}"]`);
-            if (verRadio) verRadio.checked = true;
-        }
-
-        const savedModel = localStorage.getItem('my_gemini_model_radio');
-        if (savedModel) {
-            const modelRadio = document.querySelector(`input[name="modelRadio"][value="${savedModel}"]`);
-            if (modelRadio) {
-                modelRadio.checked = true;
-                if (savedModel === 'custom') {
-                    toggleCustomModel(true);
-                    document.getElementById('customModelInput').value = localStorage.getItem('my_gemini_custom_model') || '';
-                }
-            }
-        }
-        
-        const savedTone = localStorage.getItem('my_gemini_tone_radio');
-        if (savedTone) {
-            const toneRadio = document.querySelector(`input[name="toneRadio"][value="${savedTone}"]`);
-            if (toneRadio) toneRadio.checked = true;
-        }
+        const savedAddress = localStorage.getItem('my_deepxl_address');
+        if (savedAddress) document.getElementById('apiAddress').value = savedAddress;
     });
 
     dropZone.addEventListener('click', () => fileInput.click());
@@ -196,27 +135,11 @@
     }
 
     async function startTranslation() {
-        const apiKey = document.getElementById('apiKey').value.trim();
-        const apiVerNode = document.querySelector('input[name="apiVersionRadio"]:checked');
-        const modelRadioNode = document.querySelector('input[name="modelRadio"]:checked');
-        const toneRadioNode = document.querySelector('input[name="toneRadio"]:checked');
-        
-        if (!apiKey) return alert('Gemini API 키를 입력해 주세요!');
+        const apiAddress = document.getElementById('apiAddress').value.trim();
+        if (!apiAddress) return alert('DeepXL 주소를 입력해 주세요!');
         if (selectedFiles.length === 0) return alert('파일을 업로드해 주세요!');
         
-        const apiVersion = apiVerNode.value;
-        let modelName = modelRadioNode.value;
-        if (modelName === 'custom') {
-            modelName = document.getElementById('customModelInput').value.trim();
-            if (!modelName) return alert('직접 입력할 모델명을 적어주세요!');
-            localStorage.setItem('my_gemini_custom_model', modelName);
-        }
-        const selectedTone = toneRadioNode.value;
-        
-        localStorage.setItem('my_gemini_api_key', apiKey);
-        localStorage.setItem('my_gemini_api_version', apiVersion);
-        localStorage.setItem('my_gemini_model_radio', modelRadioNode.value);
-        localStorage.setItem('my_gemini_tone_radio', selectedTone);
+        localStorage.setItem('my_deepxl_address', apiAddress);
         
         isStopped = false; isPaused = false;
         showControlButtons();
@@ -248,7 +171,9 @@
 
             let totalTasks = textTasks.length;
             let startTime = Date.now();
-            let chunkSize = 30; // 한도 초과(429) 방지용 최적화 크기
+            
+            // [핵심 변경] 문맥 인식을 위해 25줄씩 단락으로 묶어서 한 번에 전송
+            const chunkSize = 25; 
 
             for (let j = 0; j < totalTasks; j += chunkSize) {
                 if (isStopped) break;
@@ -256,67 +181,52 @@
                 if (isStopped) break;
 
                 const chunk = textTasks.slice(j, j + chunkSize);
-                const formattedLines = chunk.map(t => `[${t.index}] ${t.text}`).join('\n');
-
-                const prompt = `You are an expert subtitle translator. Translate the following video subtitles into natural Korean.
                 
-[RULES]
-1. Use consistent tone: "${selectedTone}".
-2. Keep the "[ID]" prefix exactly as given at the start of each line. Do not alter the number inside the brackets.
-3. Translate the text after the "[ID]" naturally based on the flow of the entire block.
-4. Output ONLY the translated lines with their prefixes. No extra conversational commentary.
-
-[Subtitles to translate]:
-${formattedLines}`;
+                // 줄바꿈(\n)으로 연결하여 하나의 유기적인 문장 묶음으로 빌드
+                const textToTranslate = chunk.map(t => t.text).join('\n');
 
                 try {
-                    // 선택된 엔드포인트 버전(v1 / v1beta)을 주소에 유연하게 대입
-                    const res = await fetch(`https://generativelanguage.googleapis.com/${apiVersion}/models/${modelName}:generateContent?key=${apiKey}`, {
+                    const res = await fetch(apiAddress, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+                        body: JSON.stringify({
+                            text: textToTranslate,
+                            source_lang: "EN",
+                            target_lang: "KO"
+                        })
                     });
                     
                     const data = await res.json();
                     
-                    // 429 한도 에러 발생 시 자동 부활 로직
-                    if (data.error && data.error.code === 429) {
-                        etaMessage.innerText = "";
-                        chunkSize = Math.max(10, Math.floor(chunkSize / 1.5));
-                        
-                        for (let countdown = 20; countdown > 0; countdown--) {
-                            if (isStopped) break;
-                            statusMessage.innerText = `⚠️ 무료 트래픽 한도 도달! ${countdown}초 후 자동 재시도합니다...`;
-                            await new Promise(res => setTimeout(res, 1000));
-                        }
-                        j -= chunk.length; 
-                        continue;       
+                    if (!res.ok || data.error) {
+                        throw new Error(data.error || `서버 응답 오류 (코드: ${res.status})`);
                     }
                     
-                    if (data.error) {
-                        throw new Error(`[구글 API 오류]\n코드: ${data.error.code}\n주소버전: ${apiVersion}\n모델명: ${modelName}\n메시지: ${data.error.message}`);
-                    }
-                    
-                    let responseText = data.candidates[0].content.parts[0].text.trim();
-                    
-                    // [버그 수정 고도화] AI가 앞뒤에 붙여놓은 마크다운 코드 블록 기호(```)를 강제로 청소
-                    responseText = responseText.replace(/```[a-zA-Z]*\n?/g, '').replace(/```/g, '').trim();
-                    
-                    const translatedLinesArr = responseText.split('\n');
+                    // proxy 서버 버전에 따른 데이터 추출 예외 처리
+                    const rawTranslatedText = data.data || data.text || "";
+                    const translatedLines = rawTranslatedText.split('\n').map(l => l.trim());
 
-                    translatedLinesArr.forEach(l => {
-                        // [정규식 유연성 추가] [ID]: 형태도 잡을 수 있게 수정
-                        const match = l.trim().match(/^\[(\d+)\]\s*:?\s*(.*)/);
-                        if (match) {
-                            const originIdx = parseInt(match[1]);
-                            const translatedText = match[2];
-                            currentTranslatedLines[originIdx] = translatedText;
+                    // 안전망: 줄바꿈 개수가 일치하면 문맥 번역 데이터를 일대일 매핑
+                    if (translatedLines.length === chunk.length) {
+                        for (let k = 0; k < chunk.length; k++) {
+                            currentTranslatedLines[chunk[k].index] = translatedLines[k];
                         }
-                    });
+                    } else {
+                        // 대피소: DeepL이 문장을 임의로 합쳐서 줄 수가 안 맞으면, 싱크 보호를 위해 이 묶음만 실시간 개별 직역 처리
+                        for (let k = 0; k < chunk.length; k++) {
+                            const singleRes = await fetch(apiAddress, {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ text: chunk[k].text, source_lang: "EN", target_lang: "KO" })
+                            });
+                            const singleData = await singleRes.json();
+                            currentTranslatedLines[chunk[k].index] = singleData.data || singleData.text || chunk[k].text;
+                        }
+                    }
 
                 } catch (e) {
                     console.error(e);
-                    errorTextarea.value = e.message || e.toString() || "알 수 없는 시스템 통신 장애 발생";
+                    errorTextarea.value = `[연결 오류]\nDeepXL 서버가 켜져 있는지, 혹은 주소가 올바른지 확인해 주세요.\n상세: ${e.message}`;
                     errorLogBox.style.display = 'block';
                     stopTranslation();
                     break;
@@ -335,7 +245,8 @@ ${formattedLines}`;
                     etaMessage.innerText = mins > 0 ? `남은 시간: 약 ${mins}분 ${secs}초` : `남은 시간: 약 ${secs}초`;
                 }
                 
-                await new Promise(res => setTimeout(res, 700));
+                // 로컬 통신이므로 대기 시간 0.2초로 극단적 단축 (초고속 배포 가능)
+                await new Promise(res => setTimeout(res, 200));
             }
 
             if (!isStopped && errorLogBox.style.display !== 'block') {
