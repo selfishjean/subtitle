@@ -46,8 +46,12 @@
     <p>대량의 SRT 파일을 오류 없이 자연스럽게 번역합니다.</p>
     
     <div class="config-box">
-        <label>🔑 무료 Gemini API 키 입력 (최초 1회만 입력)</label>
+        <label>🔑 무료 Gemini API 키 입력</label>
         <input type="password" id="apiKey" placeholder="AI Studio에서 발급받은 키를 붙여넣으세요">
+        
+        <!-- [추가] 모델 이름을 사용자가 직접 제어할 수 있는 칸 -->
+        <label>🤖 AI 모델명 입력 (에러 발생 시 변경 가능)</label>
+        <input type="text" id="modelName" value="gemini-2.0-flash" placeholder="예: gemini-2.0-flash, gemini-1.5-flash-latest">
         
         <label>🗣️ 번역 말투 선택</label>
         <div class="select-group">
@@ -100,12 +104,13 @@
     let currentLines = [];
     let currentTranslatedLines = [];
 
-    // --- [새로 추가] 페이지가 열릴 때 내 브라우저에 저장된 키가 있다면 자동으로 불러오기 ---
+    // 로컬스토리지에서 기존 정보 불러오기
     window.addEventListener('DOMContentLoaded', () => {
         const savedKey = localStorage.getItem('my_gemini_api_key');
-        if (savedKey) {
-            document.getElementById('apiKey').value = savedKey;
-        }
+        if (savedKey) document.getElementById('apiKey').value = savedKey;
+        
+        const savedModel = localStorage.getItem('my_gemini_model_name');
+        if (savedModel) document.getElementById('modelName').value = savedModel;
     });
 
     dropZone.addEventListener('click', () => fileInput.click());
@@ -137,11 +142,15 @@
 
     async function startTranslation() {
         const apiKey = document.getElementById('apiKey').value.trim();
+        const modelName = document.getElementById('modelName').value.trim(); // 모델명 가져오기
+        
         if (!apiKey) return alert('Gemini API 키를 입력해 주세요!');
+        if (!modelName) return alert('모델 이름을 입력해 주세요!');
         if (selectedFiles.length === 0) return alert('파일을 업로드해 주세요!');
         
-        // --- [새로 추가] 입력된 API 키를 내 브라우저 저장소에 안전하게 보관 ---
+        // 입력 정보 브라우저 기억
         localStorage.setItem('my_gemini_api_key', apiKey);
+        localStorage.setItem('my_gemini_model_name', modelName);
         
         isStopped = false; isPaused = false;
         showControlButtons();
@@ -195,7 +204,8 @@
 ${formattedLines}`;
 
                 try {
-                    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
+                    // [수정] 입력받은 최신 모델명 변수가 URL 주소에 동적으로 주입되도록 변경
+                    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
@@ -203,7 +213,7 @@ ${formattedLines}`;
                     const data = await res.json();
                     
                     if (data.error) {
-                        alert(`구글 API 에러 발생: ${data.error.message}`);
+                        alert(`구글 API 에러 발생: ${data.error.message}\n\n팁: 모델 이름이 정확한지 확인하시거나 다른 최신 모델명(예: gemini-2.0-flash)으로 변경해 보세요.`);
                         stopTranslation();
                         break;
                     }
